@@ -28,8 +28,7 @@ func main(){
   fmt.Println(`{"system":{"cpu":"mock"}}`)
  case "environment":
   token:=os.Getenv("GITHUB_TOKEN")!=""
-  fmt.Printf(`{"system":{"token_leaked":%t,"custom_path":%q}}`+"
-",token,os.Getenv("LLMFIT_CUSTOM_MODELS"))
+  fmt.Println(fmt.Sprintf(`{"system":{"token_leaked":%t,"custom_path":%q}}`,token,os.Getenv("LLMFIT_CUSTOM_MODELS")))
  case "failed_json":
   fmt.Fprintln(os.Stderr,"synthetic error")
   fmt.Println(`{"error":"synthetic"}`)
