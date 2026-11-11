@@ -58,7 +58,7 @@ func VerifyPin(root string) error {
  if len(lock.Files)!=23{return fmt.Errorf("expected 23 canonical files, got %d",len(lock.Files))}
  seen:=map[string]bool{}
  for _,f:=range lock.Files {
-  if !strings.HasPrefix(f.Path,"contracts/")||strings.Contains(f.Path,"..")||strings.Contains(f.Path,"\")||f.Path=="contracts/contract.lock.json"||seen[f.Path]{return fmt.Errorf("invalid or duplicate pinned path: %s",f.Path)}
+  if !strings.HasPrefix(f.Path,"contracts/")||strings.Contains(f.Path,"..")||strings.Contains(f.Path,"\\")||f.Path=="contracts/contract.lock.json"||seen[f.Path]{return fmt.Errorf("invalid or duplicate pinned path: %s",f.Path)}
   seen[f.Path]=true
   b,err:=os.ReadFile(filepath.Join(root,filepath.FromSlash(f.Path)));if err!=nil{return err}
   if len(b)!=f.Bytes||hex.EncodeToString(sha256sum(b))!=f.SHA256{return fmt.Errorf("pinned file changed: %s",f.Path)}
@@ -89,7 +89,7 @@ func VerifySchemaHeaders(root string)error{
  return nil
 }
 
-var numberPattern=regexp.MustCompile("^-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?$")
+var numberPattern=regexp.MustCompile("^-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?$")
 func decimalRat(token string)(*big.Rat,error){
  if !numberPattern.MatchString(token){return nil,errors.New("invalid number")}
  s:=strings.ToLower(token)
@@ -265,7 +265,7 @@ func validateCatalog(d map[string]any)error{
  }
  return nil
 }
-var pointerPattern=regexp.MustCompile("^/data/catalog/manifests/[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[1-9][0-9]*/manifest\.json$")
+var pointerPattern=regexp.MustCompile("^/data/catalog/manifests/[0-9]{4}\\.[0-9]{2}\\.[0-9]{2}\\.[1-9][0-9]*/manifest\\.json$")
 func validatePointer(d map[string]any)error{
  if err:=required(d,"manifest_path");err!=nil{return err}
  if !pointerPattern.MatchString(stringOf(d["manifest_path"])){return errors.New("unsafe manifest path")}
