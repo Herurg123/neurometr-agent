@@ -1,0 +1,55 @@
+# A2 pinned llmfit CLI PoC (Windows x64)
+
+**Status:** Draft PR; no merge, packaging, release or local owner-side development.
+**Source:** official upstream [AlexsJones/llmfit v1.1.20](https://github.com/AlexsJones/llmfit/releases/tag/v1.1.20), source tag commit `bb5771394e88e352c266f4bf8bdb7a5295a998a8` (2026-11-03).
+
+## Reproducible upstream binary pin
+
+- Archive: `llmfit-v1.1.20-x86_64-pc-windows-msvc.zip`.
+- Official URL: `https://github.com/AlexsJones/llmfit/releases/download/v1.1.20/llmfit-v1.1.20-x86_64-pc-windows-msvc.zip`.
+- Archive length: **6,878,103 bytes**.
+- Official release metadata SHA-256: **`1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`**.
+- Upstream license: **MIT**, copyright (c) 2026 Alex Jones; the complete upstream LICENSE must be included in a future bundled distribution. This PoC does not publish or redistribute a binary.
+- Repository source references (frozen tag): [CLI docs](https://github.com/AlexsJones/llmfit/blob/v1.1.20/docs/cli.md), [custom models](https://github.com/AlexsJones/llmfit/blob/v1.1.20/docs/custom-models.md), [model database](https://github.com/AlexsJones/llmfit/blob/v1.1.20/llmfit-core/src/models.rs), [CLI implementation](https://github.com/AlexsJones/llmfit/blob/v1.1.20/llmfit-tui/src/main.rs).
+
+## Commands (documented upstream, exercised only when CI confirms)
+
+```text
+llmfit.exe --version
+llmfit.exe --no-dashboard --json system
+llmfit.exe --no-dashboard --json list
+llmfit.exe --no-dashboard --json fit -n 5
+llmfit.exe --no-dashboard --json recommend --limit 5
+llmfit.exe --no-dashboard --json search NeurometrA2ProbeA
+llmfit.exe --no-dashboard --json info neurometr-poc/NeurometrA2ProbeA
+llmfit.exe --no-dashboard --json fit --show-incompatible --providers neurometr-poc -n 10
+```
+
+Command-line flags are passed directly to `exec.CommandContext` as fixed allowlisted arguments (no shell). `--no-dashboard` avoids the optional background dashboard. No `bench`, `download`, `update`, `serve`, `--share`, or unspecified network/paid operations are invoked.
+
+## Adapter scope
+
+- Strict absolute executable path, regular file, optional executable SHA-256 pin, `--version` check for 1.1.20 before each request.
+- Deadline, exit code, bounded stdout (2 MiB) and stderr (256 KiB), structured error kinds, no shell expansion and bounded strict JSON parse.
+- Only `system`, `list`, `fit`, `recommend`, `search`, `info` and provider-filtered `fit` operations.
+- Child process receives only minimal Windows environment and explicit isolated `LLMFIT_CUSTOM_MODELS`; excludes `GITHUB_TOKEN`, `GH_TOKEN`, service tokens, credentials and arbitrary environment variables.
+- A2 does **not** map llmfit output into the canonical diagnostic schema and does **not** prove hardware compatibility beyond Windows CI runner.
+
+## Custom overlay evidence protocol
+
+Tag v1.1.20 source `llmfit-core/src/models.rs` reads `LLMFIT_CUSTOM_MODELS` as a JSON file containing an **array** of objects with fields `name`, `provider`, `parameter_count`, `min_ram_gb`, `recommended_ram_gb`, `min_vram_gb`, `quantization`, `context_length`, `use_case`; a canonical-name collision **replaces** the embedded record, otherwise the entry is appended. Source implementation evidence is **not** proof that end-user CLI fit/ranking changes.
+
+Windows CI creates two temporary, synthetic overlays for the same model `neurometr-poc/NeurometrA2ProbeA`: a nominal 1B model and an intentionally larger 120B model, alongside `ProbeB` as a fixed comparison. The live tests inspect `search`, `info`, and provider-filtered `fit` output. They log separate `CUSTOM_LOAD`, `CUSTOM_FIT_EFFECT`, and `CUSTOM_RANKING_EFFECT` findings. If no observable difference, mark the particular claim `not_confirmed` rather than treating a passing test as positive evidence.
+
+## CI and acceptance limits
+
+Workflow `.github/workflows/a2-llmfit-poc.yml`: mock subprocess tests on Ubuntu 24.04 and Windows 2025; official Windows x64 release archive fetched into ephemeral CI **only after** SHA-256 and size verification, ZIP bounds checks, and Authenticode signature check. The archive and binary are **not committed or published**. Logs must be reviewed for measured outcome before claiming live CLI or custom-model verification.
+
+- No large model downloads, benchmark, GPU/SYCL execution, installation or user-PC tests.
+- GitHub Windows runner is virtualized. Real user hardware/runtime/network compatibility remains `not_tested`.
+- Full independent Go JSON Schema Draft 2020-12 validation is **still incomplete from A1**, mandatory before accepted real `diagnostic.json`; A2 neither changes canonical schemas nor asserts Go/Python conformance.
+- `LLMFIT_CUSTOM_MODELS` is not proof of safe application of `llmfit_overrides` fields from Neurometr catalogs. Approved field mapping, source provenance and actual fit/ranking effect require additional evidence.
+
+## CI outcome
+
+Pending verified PR-triggered GitHub Actions runs. Complete only from actual job logs, with any discrepancies documented.
