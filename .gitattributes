@@ -1,0 +1,3 @@
+# A1: preserve the exact canonical Web contract bytes on every runner.
+# Windows Git checkout must not convert LF to CRLF in pinned schemas or fixtures.
+contracts/** text eol=lf
