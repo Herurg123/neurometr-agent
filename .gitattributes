@@ -1,3 +1,7 @@
 # A1: preserve the exact canonical Web contract bytes on every runner.
 # Windows Git checkout must not convert LF to CRLF in pinned schemas or fixtures.
 contracts/** text eol=lf
+
+# Preserve pinned Go dependency graph bytes across Windows and Ubuntu.
+go.mod text eol=lf
+go.sum text eol=lf
