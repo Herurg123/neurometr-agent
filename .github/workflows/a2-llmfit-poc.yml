@@ -1,0 +1,93 @@
+name: A2 llmfit CLI PoC
+
+on:
+  pull_request:
+    paths:
+      - 'internal/llmfit/**'
+      - '.github/workflows/a2-llmfit-poc.yml'
+      - 'docs/A2_LLMFIT_POC.md'
+      - 'go.mod'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mock-tests:
+    name: Go subprocess mock (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    steps:
+      - name: Checkout Agent
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Check contract pin remains unchanged
+        run: go run ./cmd/contractcheck -root .
+      - name: A1 + A2 unit and negative tests
+        run: go test -v -count=1 ./...
+      - name: Static checks
+        run: go vet ./...
+
+  real-windows-cli:
+    name: Pinned official llmfit v1.1.20 (Windows x64)
+    needs: mock-tests
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Agent
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Setup Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Fetch and verify official pinned Windows asset
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          $uri = 'https://github.com/AlexsJones/llmfit/releases/download/v1.1.20/llmfit-v1.1.20-x86_64-pc-windows-msvc.zip'
+          $zipPath = Join-Path $env:RUNNER_TEMP 'llmfit-v1.1.20-x86_64-pc-windows-msvc.zip'
+          Invoke-WebRequest -Uri $uri -OutFile $zipPath -MaximumRedirection 5
+          if ((Get-Item -LiteralPath $zipPath).Length -ne 6878103) { throw 'Pinned official ZIP length mismatch' }
+          $actual = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = '1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489'
+          if ($actual -ne $expected) { throw 'Pinned official ZIP SHA-256 mismatch' }
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+          try {
+            $total = [long]0
+            if ($archive.Entries.Count -gt 30) { throw 'Unexpected archive entry count' }
+            foreach ($entry in $archive.Entries) {
+              $n = $entry.FullName
+              if ($n.StartsWith('/') -or $n.StartsWith('\') -or $n.Contains('..') -or $n.Contains(':')) { throw 'Unsafe ZIP entry path' }
+              $total += $entry.Length
+            }
+            if ($total -gt 33554432) { throw 'ZIP extracted size exceeds 32 MiB' }
+          } finally { $archive.Dispose() }
+          $dir = Join-Path $env:RUNNER_TEMP 'llmfit-poc'
+          Expand-Archive -LiteralPath $zipPath -DestinationPath $dir
+          $binaries = @(Get-ChildItem -LiteralPath $dir -Recurse -File -Filter llmfit.exe)
+          if ($binaries.Count -ne 1) { throw 'Expected exactly one llmfit.exe' }
+          $exe = $binaries[0].FullName
+          $sig = Get-AuthenticodeSignature -LiteralPath $exe
+          Write-Host ('OFFICIAL_ASSET_SHA256=' + $actual)
+          Write-Host ('AUTHENTICODE_STATUS=' + $sig.Status)
+          if ($sig.Status -ne 'Valid') { throw 'Signed Windows executable did not validate on runner' }
+          ('NEUROMETR_A2_REAL_EXE=' + $exe) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Real CLI version / system / list / fit / recommend / custom overlays
+        run: go test -v -count=1 -run '^TestLive' ./internal/llmfit
+      - name: A2 Go vet
+        run: go vet ./...
