@@ -13,6 +13,8 @@ import (
  "fmt"
  "os"
  "path/filepath"
+ "regexp"
+ "unicode"
  "strings"
  "time"
 
@@ -59,6 +61,35 @@ type Result struct {
 func evidence(kind, source string) map[string]any {
  return map[string]any{"kind":kind,"source":source}
 }
+// scrubModelName is defense in depth against device labels containing
+// host paths, e-mail, IP addresses or other unneeded personal identifiers.
+// It is applied even to injected collectors, not only Windows-native output.
+var sensitiveName = regexp.MustCompile(`(?i)(?:[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,}|(?:[0-9]{1,3}.){3}[0-9]{1,3}|[a-z]:\|\\|https?://|/users/|/home/|password|token|secret)`)
+func scrubModelName(v any)any{
+ name,ok:=v.(string)
+ if !ok{return nil}
+ name=strings.TrimSpace(name)
+ if name==""||len(name)>180||sensitiveName.MatchString(name){return nil}
+ for _,ch:=range name{if unicode.IsControl(ch)||ch==' '||ch==' '{return nil}}
+ return name
+}
+func scrubHardware(h map[string]any){
+ if cpu,ok:=h["cpu"].(map[string]any);ok{
+  cpu["model"]=scrubModelName(cpu["model"])
+ }
+ if osValue,ok:=h["os"].(map[string]any);ok{
+  if version,ok:=osValue["version"].(string);ok{
+   if len(version)>32||strings.ContainsAny(version," 
+	\/") {osValue["version"]=nil}
+  }
+ }
+ if gpus,ok:=h["gpus"].([]any);ok{
+  for _,row:=range gpus{
+   if g,ok:=row.(map[string]any);ok{g["name"]=scrubModelName(g["name"])}
+  }
+ }
+}
+
 func unknownOS()map[string]any{
  return map[string]any{"family":"windows","version":nil,"arch":"x64","evidence":evidence("unknown","agent:windows-api:unavailable")}
 }
@@ -96,6 +127,7 @@ type hardware struct {
 }
 func collect(ctx context.Context,probes Probes,perProbe time.Duration) hardware{
  values:=map[string]any{"os":unknownOS(),"cpu":unknownCPU(),"ram":unknownRAM(),"gpus":[]any{},"npus":[]any{}}
+ succeeded:=0
  h:=hardware{data:values,status:"ok",limitations:[]any{
   "NPU discovery not implemented; empty npus list does not prove NPU absence.",
   "DXGI shared system memory is an allocation ceiling, not additional physical RAM; do not add it to RAM.",
@@ -118,13 +150,16 @@ func collect(ctx context.Context,probes Probes,perProbe time.Duration) hardware{
    continue
   }
   if v!=nil{
+   succeeded++
    if r.name=="gpus"{
     // Return {"adapters": [...]} from the native DXGI collector.
     if list,ok:=v["adapters"].([]any);ok{values["gpus"]=list}
    }else{values[r.name]=v}
   }
  }
+ if succeeded==0{h.status="failed"}
  if len(h.errs)>0&&h.status=="ok"{h.status="partial"}
+ scrubHardware(values)
  return h
 }
 
