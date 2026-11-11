@@ -13,7 +13,6 @@ import (
  "os"
  "os/exec"
  "path/filepath"
- "regexp"
  "strings"
  "time"
 
@@ -146,12 +145,14 @@ func launch(ctx context.Context,exe string,args []string,custom string)([]byte,[
  return stdout.Bytes(),stderr.Bytes(),elapsed,code,nil
 }
 
-var versionRegex=regexp.MustCompile(`(?m)1.1.20`)
 func checkVersion(ctx context.Context,exe string)(string,error){
  out,_,_,code,err:=launch(ctx,exe,[]string{"--version"},"")
  if err!=nil{return "",err}
  s:=strings.TrimSpace(string(out))
- if !versionRegex.MatchString(s)||!strings.Contains(strings.ToLower(s),"llmfit"){return s,failure(VersionMismatch,code,fmt.Errorf("expected llmfit %s",Version))}
+ valid:=strings.Contains(strings.ToLower(s),"llmfit")
+ exact:=false
+ for _,part:=range strings.Fields(s){if part==Version{exact=true}}
+ if !valid||!exact{return s,failure(VersionMismatch,code,fmt.Errorf("expected llmfit %s",Version))}
  return s,nil
 }
 func ProbeVersion(ctx context.Context,exe string,timeout time.Duration)(string,error){
