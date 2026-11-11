@@ -168,10 +168,10 @@ type dxgiAdapterDesc1 struct {
 // Vtable indices: IUnknown.Release 2, IDXGIFactory1.EnumAdapters1 12,
 // IDXGIAdapter1.GetDesc1 10. This invokes stable native COM methods and
 // never starts PowerShell, WMI or a graphics compute backend.
-func comCall(p uintptr,index int,args ...uintptr)uintptr{
- table:=*(*uintptr)(unsafe.Pointer(p))
- fn:=*(*uintptr)(unsafe.Pointer(table+uintptr(index)*unsafe.Sizeof(uintptr(0))))
- callArgs:=append([]uintptr{p},args...)
+func comCall(p unsafe.Pointer,index int,args ...uintptr)uintptr{
+ table:=*(*unsafe.Pointer)(p)
+ fn:=*(*uintptr)(unsafe.Add(table,index*int(unsafe.Sizeof(uintptr(0)))))
+ callArgs:=append([]uintptr{uintptr(p)},args...)
  res,_,_:=syscall.SyscallN(fn,callArgs...)
  return res
 }
@@ -179,18 +179,18 @@ func hrFailed(hr uintptr)bool{return int32(uint32(hr))<0}
 func probeGPU(ctx context.Context)(map[string]any,error){
  if err:=ctx.Err();err!=nil{return nil,err}
  if err:=newDXGIFactory.Find();err!=nil{return nil,errors.New("DXGI unavailable")}
- var factory uintptr
+ var factory unsafe.Pointer
  hr,_,_:=newDXGIFactory.Call(uintptr(unsafe.Pointer(&dxgiFactoryIID)),uintptr(unsafe.Pointer(&factory)))
- if hrFailed(hr)||factory==0{return nil,errors.New("DXGI factory unavailable")}
+ if hrFailed(hr)||factory==nil{return nil,errors.New("DXGI factory unavailable")}
  defer comCall(factory,2)
  var adapters []any
  adapters=make([]any,0)
  for i:=0;i<32;i++{
   if err:=ctx.Err();err!=nil{return nil,err}
-  var adapter uintptr
+  var adapter unsafe.Pointer
   hr=comCall(factory,12,uintptr(i),uintptr(unsafe.Pointer(&adapter)))
   if uint32(hr)==0x887a0002{break} // DXGI_ERROR_NOT_FOUND
-  if hrFailed(hr)||adapter==0{return nil,errors.New("DXGI adapter enumeration failed")}
+  if hrFailed(hr)||adapter==nil{return nil,errors.New("DXGI adapter enumeration failed")}
   var desc dxgiAdapterDesc1
   status:=comCall(adapter,10,uintptr(unsafe.Pointer(&desc)))
   comCall(adapter,2)
