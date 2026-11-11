@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'bundled/**'
+      - '.gitattributes'
       - 'internal/catalogpin/**'
       - 'cmd/catalogcheck/**'
       - 'internal/diagnostic/**'
