@@ -232,7 +232,7 @@ func Generate(ctx context.Context,opts Options,probes Probes)(Result,error){
  cancel()
  result.HardwareStatus=h.status
  components:=[]any{map[string]any{"component":"hardware","status":h.status}}
- errorsList:=h.errs
+ errorsList:=append([]any{},h.errs...)
  engines:=[]any{}
  llmfitStatus:="skipped"
  limitations:=h.limitations
