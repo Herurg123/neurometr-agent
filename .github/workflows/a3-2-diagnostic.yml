@@ -1,16 +1,20 @@
-name: A3.2 native Windows diagnostic and private JSON gate
+name: A3.3 trusted bundled catalog and ordinary offline Windows JSON
 on:
   pull_request:
     paths:
+      - 'bundled/**'
+      - 'internal/catalogpin/**'
+      - 'cmd/catalogcheck/**'
       - 'internal/diagnostic/**'
       - 'cmd/diagnose/**'
       - 'tests/diagnostic/**'
       - 'docs/A3_2_NATIVE_DIAGNOSTIC.md'
+      - 'docs/A3_3_BUNDLED_CATALOG.md'
       - '.github/workflows/a3-2-diagnostic.yml'
   workflow_dispatch:
 
 concurrency:
-  group: a3-2-${{ github.ref }}
+  group: a3-3-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -37,7 +41,9 @@ jobs:
           cache: false
       - name: Check exact canonical A1 lock
         run: go run ./cmd/contractcheck -root .
-      - name: Test A1-A3.2 including F01-F08, synthetic failure and PII
+      - name: Verify owner-approved bundled catalog and full catalog schema
+        run: go run ./cmd/catalogcheck -root .
+      - name: Test A1-A3.3 including F01-F08, bundled tampering, offline, PII
         run: go test -v -count=1 ./...
       - name: Cross-compile pure Windows x64 CLI
         if: runner.os == 'Linux'
@@ -46,7 +52,7 @@ jobs:
         run: go vet ./...
 
   native-smoke:
-    name: Private real native Windows JSON + Go/Python validators
+    name: Ordinary Windows native JSON + Go/Web oracle, private no-upload
     needs: core
     runs-on: windows-2025
     timeout-minutes: 12
@@ -59,7 +65,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: Herurg123/neurometr-web
-          ref: 97aa0f4c1ceaef36608288e589b8abe935c5189e
+          ref: bb828bb09372e16cf63d04371d5f9367eee2526e
           path: reference-web
           persist-credentials: false
       - name: Set up pinned Go
@@ -73,7 +79,9 @@ jobs:
           python-version: '3.12'
       - name: Install Web reference dependencies
         run: python -m pip install --disable-pip-version-check 'jsonschema==4.25.1' 'rfc3339-validator==0.1.4'
-      - name: Real Windows native probe and private validated report
+      - name: Verify approved bundled catalog pin
+        run: go run ./cmd/catalogcheck -root .
+      - name: Real Windows ordinary bundled diagnostic and private validation
         run: python tests/diagnostic/smoke.py
       - name: Confirm pin byte hashes remain intact
         run: go run ./cmd/contractcheck -root .
