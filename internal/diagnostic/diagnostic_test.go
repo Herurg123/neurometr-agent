@@ -179,12 +179,12 @@ func TestPIIIsNotEmitted(t *testing.T){
   "evidence":evidence("detected","test:cpu"),
  },nil}
  p.GPU=func(context.Context)(map[string]any,error){return map[string]any{"adapters":[]any{map[string]any{
-  "index":0,"name":`C:UsersPrivateUseradapter`,
+  "index":0,"name":"C:"+string(rune(92))+"Users"+string(rune(92))+"PrivateUser"+string(rune(92))+"adapter",
   "memory":map[string]any{"dedicated_total_bytes":nil,"dedicated_available_bytes":nil,"shared_total_bytes":nil},
   "memory_topology":"unknown","evidence":evidence("unknown","test:gpu"),
  }}},nil}
  out:=testGenerate(t,opts,p)
- for _,s:=range []string{"private@example.com",`C:UsersPrivateUser`,"username","hostname","serial_number","mac_address","ip_address","GITHUB_TOKEN","USERPROFILE"}{
+ for _,s:=range []string{"private@example.com","C:"+string(rune(92))+"Users"+string(rune(92))+"PrivateUser","username","hostname","serial_number","mac_address","ip_address","GITHUB_TOKEN","USERPROFILE"}{
   if bytes.Contains(bytes.ToLower(out.JSON),bytes.ToLower([]byte(s))){t.Fatalf("sensitive string %q leaked into JSON",s)}
  }
  h:=decodeReport(t,out.JSON)["hardware"].(map[string]any)
