@@ -99,45 +99,131 @@ func brief(m map[string]any)string{
  return strings.Join(parts,", ")
 }
 
-// This is an evidence-producing integration test, not an unconditional assertion
-// that custom models affect real fit/ranking.
-func TestLiveCustomModels(t *testing.T){
- exe:=os.Getenv("NEUROMETR_A2_REAL_EXE")
- if exe==""{t.Skip("real custom-model behavior requires official Windows CLI in cloud CI")}
- ctx:=context.Background()
- low:=writeCustom(t,"small",false)
- high:=writeCustom(t,"large",true)
- model:="neurometr-poc/NeurometrA2ProbeA"
- baseline,err:=Run(ctx,Request{Executable:exe,Operation:Search,Selector:"NeurometrA2ProbeA",Timeout:50*time.Second})
- if err!=nil{t.Logf("CUSTOM_BASELINE=not_tested err=%v",err)}else{t.Logf("CUSTOM_BASELINE_RESULTS=%d",len(modelNames(baseline.Document)))}
- check:=func(path string)(map[string]any,[]string,bool){
-  found,err:=Run(ctx,Request{Executable:exe,Operation:Search,Selector:"NeurometrA2ProbeA",CustomModelsPath:path,Timeout:50*time.Second})
-  if err!=nil{t.Logf("CUSTOM_SEARCH=failed err=%v stderr=%s",err,sanitize(found.Stderr));return nil,nil,false}
-  detected:=false
-  for _,name:=range modelNames(found.Document){if name==model{detected=true}}
-  if !detected{t.Log("CUSTOM_LOAD=not_confirmed: model not present in search");return nil,nil,false}
-  t.Log("CUSTOM_LOAD=confirmed: exact synthetic model visible in CLI search")
-  info,err:=Run(ctx,Request{Executable:exe,Operation:Info,Selector:model,CustomModelsPath:path,Timeout:50*time.Second})
-  if err!=nil{t.Logf("CUSTOM_INFO=not_confirmed err=%v stderr=%s",err,sanitize(info.Stderr))} 
-  var detail map[string]any
-  if err==nil{detail,_=visibleModel(info.Document,model)}
-  ranked,fitErr:=Run(ctx,Request{Executable:exe,Operation:FitProvider,Selector:"neurometr-poc",CustomModelsPath:path,Timeout:60*time.Second})
-  if fitErr!=nil{t.Logf("CUSTOM_FIT=not_confirmed err=%v stderr=%s",fitErr,sanitize(ranked.Stderr));return detail,nil,true}
-  return detail,modelNames(ranked.Document),true
+// TestLiveCustomModels is a strict regression gate for the tested synthetic
+// llmfit v1.1.20 overlay behavior. Future Neurometr override fields are NOT
+// covered by this test.
+func TestLiveCustomModels(t *testing.T) {
+ exe := os.Getenv("NEUROMETR_A2_REAL_EXE")
+ if exe == "" {
+  t.Skip("real custom-model behavior requires pinned official Windows CLI in cloud CI")
  }
- small,smallRanking,smallLoaded:=check(low)
- large,largeRanking,largeLoaded:=check(high)
- if !smallLoaded||!largeLoaded{t.Log("CUSTOM_EFFECT=not_confirmed: at least one CLI overlay load absent");return}
- t.Logf("CUSTOM_SMALL_FIT=%s",brief(small))
- t.Logf("CUSTOM_LARGE_FIT=%s",brief(large))
- if small!=nil&&large!=nil&&brief(small)!=brief(large){
-  t.Log("CUSTOM_FIT_EFFECT=confirmed: real CLI fit/info fields differ between overlays")
- }else{t.Log("CUSTOM_FIT_EFFECT=not_confirmed: no comparable computed difference")}
- t.Logf("CUSTOM_SMALL_RANKING=%s",strings.Join(smallRanking,","))
- t.Logf("CUSTOM_LARGE_RANKING=%s",strings.Join(largeRanking,","))
- if len(smallRanking)>0&&len(largeRanking)>0&&strings.Join(smallRanking,",")!=strings.Join(largeRanking,","){
-  t.Log("CUSTOM_RANKING_EFFECT=confirmed: real CLI provider-filtered ordering differs")
- }else{
-  t.Log("CUSTOM_RANKING_EFFECT=not_confirmed: no observable ranking change under runner conditions")
+ ctx := context.Background()
+ smallPath := writeCustom(t, "small", false)
+ largePath := writeCustom(t, "large", true)
+ const probeA = "neurometr-poc/NeurometrA2ProbeA"
+ const probeB = "neurometr-poc/NeurometrA2ProbeB"
+
+ baseline, err := Run(ctx, Request{
+  Executable: exe, Operation: Search, Selector: "NeurometrA2ProbeA",
+  Timeout: 50 * time.Second,
+ })
+ if err != nil {
+  t.Fatalf("CUSTOM_BASELINE=failed: %v; stderr=%s", err, sanitize(baseline.Stderr))
  }
+ for _, name := range modelNames(baseline.Document) {
+  if name == probeA {
+   t.Fatalf("CUSTOM_BASELINE=failed: probe already visible without custom overlay")
+  }
+ }
+ t.Log("CUSTOM_BASELINE=confirmed: synthetic ProbeA absent without overlay")
+
+ indexUnique := func(names []string, wanted string) int {
+  position := -1
+  for i, name := range names {
+   if name != wanted { continue }
+   if position >= 0 {
+    t.Fatalf("CUSTOM_RANKING_EFFECT=not_confirmed: duplicate %s in %v", wanted, names)
+   }
+   position = i
+  }
+  if position < 0 {
+   t.Fatalf("CUSTOM_LOAD=not_confirmed: %s absent from provider-filtered fit %v", wanted, names)
+  }
+  return position
+ }
+ check := func(label, path, parameters string) (map[string]any, []string) {
+  found, err := Run(ctx, Request{
+   Executable: exe, Operation: Search, Selector: "NeurometrA2ProbeA",
+   CustomModelsPath: path, Timeout: 50 * time.Second,
+  })
+  if err != nil {
+   t.Fatalf("CUSTOM_LOAD=not_confirmed (%s): search failed: %v; stderr=%s",
+    label, err, sanitize(found.Stderr))
+  }
+  foundCount := 0
+  for _, name := range modelNames(found.Document) {
+   if name == probeA { foundCount++ }
+  }
+  if foundCount != 1 {
+   t.Fatalf("CUSTOM_LOAD=not_confirmed (%s): expected one ProbeA in search, got %d", label, foundCount)
+  }
+
+  info, err := Run(ctx, Request{
+   Executable: exe, Operation: Info, Selector: probeA,
+   CustomModelsPath: path, Timeout: 50 * time.Second,
+  })
+  if err != nil {
+   t.Fatalf("CUSTOM_FIT_EFFECT=not_confirmed (%s): info failed: %v; stderr=%s",
+    label, err, sanitize(info.Stderr))
+  }
+  detail, ok := visibleModel(info.Document, probeA)
+  if !ok {
+   t.Fatalf("CUSTOM_FIT_EFFECT=not_confirmed (%s): ProbeA missing from info response", label)
+  }
+  if detail["parameter_count"] != parameters {
+   t.Fatalf("CUSTOM_LOAD=not_confirmed (%s): overlay parameters=%v; want %s",
+    label, detail["parameter_count"], parameters)
+  }
+  ranked, err := Run(ctx, Request{
+   Executable: exe, Operation: FitProvider, Selector: "neurometr-poc",
+   CustomModelsPath: path, Timeout: 60 * time.Second,
+  })
+  if err != nil {
+   t.Fatalf("CUSTOM_RANKING_EFFECT=not_confirmed (%s): fit failed: %v; stderr=%s",
+    label, err, sanitize(ranked.Stderr))
+  }
+  ranking := modelNames(ranked.Document)
+  indexUnique(ranking, probeA)
+  indexUnique(ranking, probeB)
+  t.Logf("CUSTOM_LOAD=confirmed (%s): both synthetic models visible; parameter_count=%s", label, parameters)
+  return detail, ranking
+ }
+
+ small, smallRanking := check("1B", smallPath, "1B")
+ large, largeRanking := check("120B", largePath, "120B")
+ t.Logf("CUSTOM_SMALL_FIT=%s", brief(small))
+ t.Logf("CUSTOM_LARGE_FIT=%s", brief(large))
+
+ number := func(label string, m map[string]any, key string) float64 {
+  raw, ok := m[key].(json.Number)
+  if !ok {
+   t.Fatalf("CUSTOM_FIT_EFFECT=not_confirmed (%s): %s is not a JSON number (%T)", label, key, m[key])
+  }
+  value, err := raw.Float64()
+  if err != nil {
+   t.Fatalf("CUSTOM_FIT_EFFECT=not_confirmed (%s): %s invalid numeric value: %v", label, key, err)
+  }
+  return value
+ }
+ smallLevel, smallOK := small["fit_level"].(string)
+ largeLevel, largeOK := large["fit_level"].(string)
+ smallMemory := number("1B", small, "memory_required_gb")
+ largeMemory := number("120B", large, "memory_required_gb")
+ smallTPS := number("1B", small, "estimated_tps")
+ largeTPS := number("120B", large, "estimated_tps")
+ if !smallOK || !largeOK || smallLevel == "" || largeLevel == "" ||
+  smallLevel == largeLevel || largeMemory <= smallMemory || largeTPS >= smallTPS {
+  t.Fatalf("CUSTOM_FIT_EFFECT=not_confirmed: levels %q/%q, memory %.4f/%.4f, estimated TPS %.4f/%.4f",
+   smallLevel, largeLevel, smallMemory, largeMemory, smallTPS, largeTPS)
+ }
+ t.Log("CUSTOM_FIT_EFFECT=confirmed: live CLI changed fit level, memory estimate and estimated TPS")
+
+ aSmall, bSmall := indexUnique(smallRanking, probeA), indexUnique(smallRanking, probeB)
+ aLarge, bLarge := indexUnique(largeRanking, probeA), indexUnique(largeRanking, probeB)
+ t.Logf("CUSTOM_SMALL_RANKING=%s", strings.Join(smallRanking, ","))
+ t.Logf("CUSTOM_LARGE_RANKING=%s", strings.Join(largeRanking, ","))
+ if !(aSmall < bSmall && bLarge < aLarge) {
+  t.Fatalf("CUSTOM_RANKING_EFFECT=not_confirmed: expected ProbeA before ProbeB for 1B and reversed for 120B")
+ }
+ t.Log("CUSTOM_RANKING_EFFECT=confirmed: live CLI reverses provider-filtered ProbeA/ProbeB ordering")
 }
