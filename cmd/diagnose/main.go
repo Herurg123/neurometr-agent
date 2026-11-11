@@ -17,7 +17,7 @@ import (
 
 func main(){
  root:=flag.String("root",".","Agent source root with pinned contracts")
- catalog:=flag.String("catalog","","absolute path to an explicitly supplied local v0.1.0 catalog")
+ catalog:=flag.String("catalog","","CI test-only pinned catalog fixture; ordinary export disabled until trust policy approved")
  output:=flag.String("output","","private destination for the fully validated diagnostic JSON")
  exe:=flag.String("llmfit","","optional absolute llmfit v1.1.20 executable; not needed for hardware")
  sha:=flag.String("llmfit-sha256","","optional expected SHA-256 for enabled llmfit")
@@ -42,7 +42,7 @@ func main(){
  },diagnostic.NativeProbes())
  if err!=nil{
   if errors.Is(err,diagnostic.ErrCatalogRequired){
-   fmt.Fprintln(os.Stderr,"CATALOG_BLOCKER: an approved local production catalog is not configured")
+   fmt.Fprintln(os.Stderr,"CATALOG_BLOCKER: no approved trusted catalog; ordinary export is disabled")
   }else{
    fmt.Fprintln(os.Stderr,"A3.2 validation/collection error:",err)
   }
