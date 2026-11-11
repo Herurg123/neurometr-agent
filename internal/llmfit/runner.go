@@ -128,6 +128,8 @@ func cleanedEnv(custom,exe string)([]string,error){
 func launch(ctx context.Context,exe string,args []string,custom string)([]byte,[]byte,time.Duration,int,error){
  env,err:=cleanedEnv(custom,exe);if err!=nil{return nil,nil,0,-1,err}
  cmd:=exec.CommandContext(ctx,exe,args...)
+ // A descendant may inherit stdout/stderr handles: bound Wait after context cancel or parent exit.
+ cmd.WaitDelay=2*time.Second
  cmd.Env=env
  cmd.Dir=filepath.Dir(exe)
  stdout:=&limitedBuffer{limit:maxStdout}
