@@ -215,3 +215,102 @@ func TestFullValidatorRejectsMutatedRealOutput(t *testing.T){
  v,err:=contract.NewFullValidator(opts.ContractRoot);if err!=nil{t.Fatal(err)}
  if _,err=v.ValidateBytes("diagnostic",bad);err==nil{t.Fatal("semantic contradiction accepted")}
 }
+
+ 
+// An external copy of catalog_valid.json is still synthetic. Neither a matching
+// SHA-256 nor schema compliance supplies the unapproved production trust anchor.
+func TestCopiedCatalogCannotBypassProductionGate(t *testing.T){
+ opts:=testCatalog(t)
+ raw,err:=os.ReadFile(opts.CatalogPath)
+ if err!=nil{t.Fatal(err)}
+ copied:=filepath.Join(t.TempDir(),"catalog-copy.json")
+ if err=os.WriteFile(copied,raw,0600);err!=nil{t.Fatal(err)}
+ validator,err:=contract.NewFullValidator(opts.ContractRoot)
+ if err!=nil{t.Fatal(err)}
+ if _,err=validator.ValidateBytes("catalog",raw);err!=nil{
+  t.Fatalf("precondition: synthetic catalog must be structurally valid: %v",err)
+ }
+ originalDigest:=sha256.Sum256(raw)
+ copiedBytes,err:=os.ReadFile(copied);if err!=nil{t.Fatal(err)}
+ if sha256.Sum256(copiedBytes)!=originalDigest{t.Fatal("copied bytes differ from fixture")}
+ opts.CatalogPath=copied
+ opts.AllowTestCatalog=false // ordinary export, even with test env present
+ result,err:=Generate(context.Background(),opts,fakeProbes())
+ if !errors.Is(err,ErrCatalogRequired)||len(result.JSON)!=0{
+  t.Fatalf("ordinary export accepted copied synthetic catalog (err=%v bytes=%d)",err,len(result.JSON))
+ }
+ t.Log("COPIED_CATALOG_ORDINARY_EXPORT=blocked: schema-valid, byte-identical external fixture")
+ // Test mode is also intentionally limited to the pinned fixture by file identity.
+ opts.AllowTestCatalog=true
+ result,err=Generate(context.Background(),opts,fakeProbes())
+ if err==nil||len(result.JSON)!=0{
+  t.Fatal("test-only export accepted an external copied fixture")
+ }
+ t.Log("COPIED_CATALOG_TEST_MODE=blocked: only exact pinned CI fixture admitted")
+}
+
+func TestOverallStatusAcrossHardwareAndLLMFit(t *testing.T){
+ opts:=testCatalog(t)
+ suffix:="";if runtime.GOOS=="windows"{suffix=".exe"}
+ mock:=filepath.Join(t.TempDir(),"llmfitmock"+suffix)
+ build:=exec.Command("go","build","-o",mock,"../llmfit/testdata/mockcli")
+ if b,err:=build.CombinedOutput();err!=nil{t.Fatalf("build synthetic CLI: %v; %s",err,b)}
+ // No real llmfit download, network call or benchmark.
+ failedHardware:=func()Probes{
+  noData:=func(context.Context)(map[string]any,error){return nil,errors.New("synthetic hardware query failure")}
+  return Probes{OS:noData,CPU:noData,RAM:noData,GPU:noData}
+ }
+ cases:=[]struct{
+  name string
+  probes Probes
+  executable string
+  mode string
+  wantHardware string
+  wantLLMFit string
+  wantOverall string
+  wantErrors int
+ }{
+  {"hardware_failed_llmfit_ok",failedHardware(),mock,"ok","failed","ok","partial",4},
+  {"hardware_failed_llmfit_skipped",failedHardware(),"","","failed","skipped","failed",4},
+  {"hardware_failed_llmfit_failed",failedHardware(),filepath.Join(t.TempDir(),"missing.exe"),"","failed","failed","failed",5},
+  {"hardware_ok_llmfit_failed",fakeProbes(),filepath.Join(t.TempDir(),"missing.exe"),"","ok","failed","partial",1},
+ }
+ for _,tc:=range cases{
+  t.Run(tc.name,func(t *testing.T){
+   t.Setenv("NEUROMETR_MOCK_MODE",tc.mode)
+   selected:=opts
+   selected.LLMFitExecutable=tc.executable
+   selected.LLMFitTimeout=3*time.Second
+   // testGenerate requires the full schema + semantic validator to PASS.
+   result:=testGenerate(t,selected,tc.probes)
+   report:=decodeReport(t,result.JSON)
+   if result.HardwareStatus!=tc.wantHardware||result.LLMFitStatus!=tc.wantLLMFit||
+     report["overall_status"]!=tc.wantOverall{
+    t.Fatalf("status mismatch: hardware=%s llmfit=%s overall=%v; want %s/%s/%s",
+     result.HardwareStatus,result.LLMFitStatus,report["overall_status"],
+     tc.wantHardware,tc.wantLLMFit,tc.wantOverall)
+   }
+   components:=map[string]string{}
+   for _,raw:=range report["components"].([]any){
+    c:=raw.(map[string]any)
+    components[c["component"].(string)]=c["status"].(string)
+   }
+   if components["hardware"]!=tc.wantHardware||components["llmfit"]!=tc.wantLLMFit||
+      components["cloud"]!="skipped"{t.Fatalf("component status mismatch: %v",components)}
+   if got:=len(report["errors"].([]any));got!=tc.wantErrors{
+    t.Fatalf("want %d structured errors, got %d",tc.wantErrors,got)
+   }
+   if tc.wantLLMFit=="ok"{
+    engines:=report["engines"].([]any)
+    if len(engines)!=1||engines[0].(map[string]any)["status"]!="ok"{
+      t.Fatal("successful llmfit engine result omitted")
+    }
+   }
+   if report["catalog_ref"].(map[string]any)["origin"]!="cached"{
+    t.Fatal("test-only catalog reference disappeared")
+   }
+   t.Logf("STATUS_REGRESSION=PASS hardware=%s llmfit=%s overall=%s full_validator=PASS",
+    tc.wantHardware,tc.wantLLMFit,tc.wantOverall)
+  })
+ }
+}
