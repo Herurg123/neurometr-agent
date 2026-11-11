@@ -22,7 +22,7 @@ import (
 const Version = "1.1.20"
 const maxStdout = 2 * 1024 * 1024
 const maxStderr = 256 * 1024
-const maxBinary = 32 * 1024 * 1024
+const maxBinary = 128 * 1024 * 1024
 
 type Operation string
 
