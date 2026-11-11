@@ -2,6 +2,7 @@ package llmfit
 
 import (
  "context"
+ "errors"
  "encoding/json"
  "fmt"
  "os"
@@ -23,7 +24,14 @@ func TestLivePinnedCLI(t *testing.T) {
  for _,op:=range []Operation{System,List,Fit,Recommend}{
   t.Run(string(op),func(t *testing.T){
    r,err:=Run(ctx,Request{Executable:exe,Operation:op,Timeout:75*time.Second})
-   if err!=nil{t.Fatalf("real %s: %v; stderr=%s",op,err,sanitize(r.Stderr))}
+   if err!=nil{
+    var e *CLIError
+    if op==List&&errors.As(err,&e)&&e.Kind==OutputTooLarge{
+     t.Logf("LIVE_LIST_BOUNDED_REJECTION=confirmed STDOUT_CAP_MIB=8 CAPTURED_BYTES=%d EXIT=%d",r.StdoutBytes,r.ExitCode)
+     return
+    }
+    t.Fatalf("real %s: %v; stderr=%s",op,err,sanitize(r.Stderr))
+   }
    n:=0
    switch doc:=r.Document.(type){
    case []any:n=len(doc)

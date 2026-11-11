@@ -9,6 +9,10 @@ on:
       - 'go.mod'
   workflow_dispatch:
 
+concurrency:
+  group: a2-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
