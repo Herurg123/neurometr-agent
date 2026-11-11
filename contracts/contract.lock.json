@@ -1,0 +1,131 @@
+{
+  "contract_version": "0.1.0",
+  "source": {
+    "repository": "Herurg123/neurometr-web",
+    "commit": "97aa0f4c1ceaef36608288e589b8abe935c5189e",
+    "path_prefix": "contracts/",
+    "pull_request": "https://github.com/Herurg123/neurometr-web/pull/1"
+  },
+  "algorithm": "SHA-256",
+  "files": [
+    {
+      "path": "contracts/catalog-manifest.schema.json",
+      "sha256": "5f5fb36a09c304ab28be5cd365244524e21449db9826855eea58964c041ac7fb",
+      "bytes": 2182
+    },
+    {
+      "path": "contracts/catalog.schema.json",
+      "sha256": "e41415c169ed72b5cc70154a5203eb6352f922bd54ef8171d273d946fac943cb",
+      "bytes": 9576
+    },
+    {
+      "path": "contracts/diagnostic.schema.json",
+      "sha256": "ba51b1a8cbdb8b3073331a7e9813c7fb95c726eaab4b40ca763a6a19b4e3c4a9",
+      "bytes": 25346
+    },
+    {
+      "path": "contracts/fixtures/catalog_valid.json",
+      "sha256": "05466c35ee750f64653c2c97e9441b7b52e6160c8975ec291c434fdbddc10eb2",
+      "bytes": 1974
+    },
+    {
+      "path": "contracts/fixtures/expected-results.json",
+      "sha256": "920627ca6e47d7195bfacd2a10b5d8c8008016c0140771a667b3a3fbb0d26b4a",
+      "bytes": 1019
+    },
+    {
+      "path": "contracts/fixtures/F01_diagnostic_windows_ok.json",
+      "sha256": "78a570799a58b0dcd37d314b186f8c878870b41a50df8750951f74dbe694b197",
+      "bytes": 4985
+    },
+    {
+      "path": "contracts/fixtures/F02_diagnostic_llmfit_timeout.json",
+      "sha256": "0742fa1217a25577da23d987076536e693f9022fed3a87d4ac1e96f6a9c1626f",
+      "bytes": 3489
+    },
+    {
+      "path": "contracts/fixtures/F03_diagnostic_offline_site.json",
+      "sha256": "38650a419b9dcf77e000e7e080a49994c4db7f314ddb30acb767248ab562731c",
+      "bytes": 2474
+    },
+    {
+      "path": "contracts/fixtures/F04_diagnostic_unknown_igpu.json",
+      "sha256": "c9ec4839fc7aa4176d930862c1442d275203274b9e4e9d7670efa001b839432a",
+      "bytes": 3608
+    },
+    {
+      "path": "contracts/fixtures/F05_diagnostic_cpu_vs_sycl.json",
+      "sha256": "5f15cf5dcac140c4cd7767a3a28f9f2bd412c1f0b8870ffb19dab96cbce164a8",
+      "bytes": 5997
+    },
+    {
+      "path": "contracts/fixtures/F06_diagnostic_unsupported_schema.json",
+      "sha256": "f4dd724932fc371d34989fa98c41bacf210ab25825f3196bfbdab5e18e3ac1fe",
+      "bytes": 4985
+    },
+    {
+      "path": "contracts/fixtures/F07_catalog_invalid_checksum.json",
+      "sha256": "05466c35ee750f64653c2c97e9441b7b52e6160c8975ec291c434fdbddc10eb2",
+      "bytes": 1974
+    },
+    {
+      "path": "contracts/fixtures/F07_catalog_invalid_checksum.manifest.json",
+      "sha256": "6a0f21de8aa38103e28e29c09c187215126b03c07a2e8cc884d4f93186c59b80",
+      "bytes": 563
+    },
+    {
+      "path": "contracts/fixtures/F08_catalog_incompatible_override.json",
+      "sha256": "bdefe485696134f833cc66879058a844d60b2224612cfa83eb4b973ce6ddc423",
+      "bytes": 2269
+    },
+    {
+      "path": "contracts/fixtures/latest_valid.json",
+      "sha256": "4260e311c1971390bcb5b90d9f113e1381b329132e75601a5c665ba9e1728faf",
+      "bytes": 144
+    },
+    {
+      "path": "contracts/fixtures/numeric-vectors.json",
+      "sha256": "648418094eb0716713d9a21ca313e4a1a5e8ca1a2209c845bcb8d7e50e1320b0",
+      "bytes": 1537
+    },
+    {
+      "path": "contracts/latest-pointer.md",
+      "sha256": "123c39c1367799f6d3d5785c65d8bae1bb9506aa39417d26cbb5050aff6266bb",
+      "bytes": 2033
+    },
+    {
+      "path": "contracts/latest-pointer.schema.json",
+      "sha256": "51dc5b132c871047363af5df23e1c973c7798a38e151f540a7fdf44549f284a8",
+      "bytes": 608
+    },
+    {
+      "path": "contracts/NUMERIC_PROFILE.md",
+      "sha256": "445b43d937ceed44864a8d526ba0e642b5feba9784621b4ef77cc6aa3d0db0dc",
+      "bytes": 2444
+    },
+    {
+      "path": "contracts/PROVENANCE_RULES.md",
+      "sha256": "07c47511e2f538bd8225789bce22981262b881901fed124c8b1cc6133ec2fd96",
+      "bytes": 2454
+    },
+    {
+      "path": "contracts/README.md",
+      "sha256": "26403c4f086ae95fe20ef10ebfed9c75a49d8016cd1abcae1230ae5118e1a448",
+      "bytes": 5781
+    },
+    {
+      "path": "contracts/STATUS_EXECUTION_INVARIANTS.md",
+      "sha256": "7ee5f881e444deeb9d73ad4c2d6ea31c2788d83b4c02c8b4dcc8be08b35fd255",
+      "bytes": 3630
+    },
+    {
+      "path": "contracts/VERSIONING.md",
+      "sha256": "9a1ead8f61ad5634c93f71d89a62393af48ae311c7310ca03050a85128e88dea",
+      "bytes": 2342
+    }
+  ],
+  "verification": {
+    "command": "go run ./cmd/contractcheck -root .",
+    "method": "SHA-256 exact UTF-8 file bytes and byte count; reject files missing from or unlisted by lock. Git blob SHA is not a SHA-256 digest."
+  }
+}
