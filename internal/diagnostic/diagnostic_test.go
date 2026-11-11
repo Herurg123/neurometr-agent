@@ -15,6 +15,7 @@ import (
  "testing"
  "time"
 
+ "github.com/Herurg123/neurometr-agent/internal/catalogpin"
  "github.com/Herurg123/neurometr-agent/internal/contract"
 )
 func repoRoot(t *testing.T)string{t.Helper();p,e:=filepath.Abs(filepath.Join("..",".."));if e!=nil{t.Fatal(e)};return p}
@@ -311,6 +312,110 @@ func TestOverallStatusAcrossHardwareAndLLMFit(t *testing.T){
    }
    t.Logf("STATUS_REGRESSION=PASS hardware=%s llmfit=%s overall=%s full_validator=PASS",
     tc.wantHardware,tc.wantLLMFit,tc.wantOverall)
+  })
+ }
+}
+
+ 
+// A3.3 normal mode uses the owner-approved bundled snapshot, not any
+// explicitly supplied or environment-controlled local catalog.
+func TestApprovedBundledProductionExportOffline(t *testing.T){
+ opts:=Options{ContractRoot:repoRoot(t)}
+ t.Setenv("NEUROMETR_CATALOG_PATH",filepath.Join(t.TempDir(),"untrusted.json"))
+ output:=testGenerate(t,opts,fakeProbes())
+ d:=decodeReport(t,output.JSON)
+ ref:=d["catalog_ref"].(map[string]any)
+ if ref["origin"]!="bundled"||ref["version"]!=catalogpin.CatalogVersion||
+  ref["sha256"]!=catalogpin.CatalogSHA256||ref["compatibility"]!="passed"{
+  t.Fatalf("ordinary export lacks pinned bundled ref: %v",ref)
+ }
+ if d["overall_status"]!="ok"||output.LLMFitStatus!="skipped"{t.Fatal("hardware-first offline export failed")}
+ if bytes.Contains(output.JSON,[]byte("TEST ONLY")){
+  t.Fatal("ordinary export incorrectly marked as synthetic fixture")
+ }
+ for _,name:=range []string{"runtime_checks","model_assessments","cloud_checks"}{
+  if len(d[name].([]any))!=0{t.Fatalf("catalog falsely materialized %s",name)}
+ }
+ if len(d["engines"].([]any))!=0{t.Fatal("catalog metadata falsely claimed engine/model loaded")}
+ t.Log("A3_3_ORDINARY_EXPORT=PASS ORIGIN=bundled FULL_VALIDATOR=PASS NO_LLMFIT=PASS NO_MODEL_CLAIMS=PASS")
+}
+
+func TestBundledExportRejectsAnyLocalOverride(t *testing.T){
+ base:=Options{ContractRoot:repoRoot(t)}
+ raw,err:=os.ReadFile(filepath.Join(base.ContractRoot,"bundled","catalog.json"))
+ if err!=nil{t.Fatal(err)}
+ copied:=filepath.Join(t.TempDir(),"catalog-copy.json")
+ if err=os.WriteFile(copied,raw,0600);err!=nil{t.Fatal(err)}
+ inputs:=[]string{
+  copied,
+  filepath.Join(base.ContractRoot,"bundled","catalog.json"),
+  filepath.Join(base.ContractRoot,"contracts","fixtures","catalog_valid.json"),
+ }
+ for _,path:=range inputs{
+  opts:=base
+  opts.CatalogPath=path
+  out,err:=Generate(context.Background(),opts,fakeProbes())
+  if !errors.Is(err,ErrCatalogRequired)||len(out.JSON)!=0{
+   t.Fatalf("ordinary catalog override unexpectedly trusted: path class rejected=%v report bytes=%d",err,len(out.JSON))
+  }
+ }
+ // Setting an environment variable alone never selects an external file.
+ t.Setenv("NEUROMETR_CATALOG_PATH",copied)
+ out:=testGenerate(t,base,fakeProbes())
+ if decodeReport(t,out.JSON)["catalog_ref"].(map[string]any)["origin"]!="bundled"{
+  t.Fatal("environment variable replaced pinned catalog")
+ }
+ t.Log("A3_3_EXTERNAL_CATALOG_OVERRIDE=blocked; env spoof ignored")
+}
+
+func copyContractsForNegative(t *testing.T,dir string){
+ t.Helper()
+ src:=filepath.Join(repoRoot(t),"contracts")
+ dst:=filepath.Join(dir,"contracts")
+ err:=filepath.WalkDir(src,func(path string,entry os.DirEntry,walkErr error)error{
+  if walkErr!=nil{return walkErr}
+  rel,err:=filepath.Rel(src,path)
+  if err!=nil{return err}
+  target:=filepath.Join(dst,rel)
+  if entry.IsDir(){return os.MkdirAll(target,0700)}
+  if !entry.Type().IsRegular(){return errors.New("non-regular canonical contract file")}
+  b,err:=os.ReadFile(path);if err!=nil{return err}
+  return os.WriteFile(target,b,0600)
+ })
+ if err!=nil{t.Fatal(err)}
+}
+func TestOrdinaryGenerateFailsClosedOnCorruptOrMissingBundle(t *testing.T){
+ root:=repoRoot(t)
+ baseCatalog,err:=os.ReadFile(filepath.Join(root,"bundled","catalog.json"));if err!=nil{t.Fatal(err)}
+ baseLock,err:=os.ReadFile(filepath.Join(root,"bundled","catalog.lock.json"));if err!=nil{t.Fatal(err)}
+ cases:=[]struct{name string; mutate func(t *testing.T,dir string)}{
+  {"missing_catalog",func(t *testing.T,dir string){if err:=os.Remove(filepath.Join(dir,"bundled","catalog.json"));err!=nil{t.Fatal(err)}}},
+  {"corrupt_sha",func(t *testing.T,dir string){
+   p:=filepath.Join(dir,"bundled","catalog.json")
+   b,err:=os.ReadFile(p);if err!=nil{t.Fatal(err)}
+   b[200]^=1
+   if err=os.WriteFile(p,b,0600);err!=nil{t.Fatal(err)}
+  }},
+  {"wrong_locked_version",func(t *testing.T,dir string){
+   p:=filepath.Join(dir,"bundled","catalog.lock.json")
+   b,err:=os.ReadFile(p);if err!=nil{t.Fatal(err)}
+   b=bytes.Replace(b,[]byte(catalogpin.CatalogVersion),[]byte("2026.11.11.3"),1)
+   if err=os.WriteFile(p,b,0600);err!=nil{t.Fatal(err)}
+  }},
+ }
+ for _,tc:=range cases{
+  t.Run(tc.name,func(t *testing.T){
+   dir:=t.TempDir()
+   copyContractsForNegative(t,dir)
+   if err:=os.MkdirAll(filepath.Join(dir,"bundled"),0700);err!=nil{t.Fatal(err)}
+   if err:=os.WriteFile(filepath.Join(dir,"bundled","catalog.json"),baseCatalog,0600);err!=nil{t.Fatal(err)}
+   if err:=os.WriteFile(filepath.Join(dir,"bundled","catalog.lock.json"),baseLock,0600);err!=nil{t.Fatal(err)}
+   tc.mutate(t,dir)
+   out,err:=Generate(context.Background(),Options{ContractRoot:dir},fakeProbes())
+   if !errors.Is(err,ErrCatalogRequired)||len(out.JSON)!=0{
+    t.Fatalf("untrusted bundle produced JSON: err=%v size=%d",err,len(out.JSON))
+   }
+   t.Logf("A3_3_ORDINARY_NEGATIVE=%s NO_OUTPUT=PASS",tc.name)
   })
  }
 }
