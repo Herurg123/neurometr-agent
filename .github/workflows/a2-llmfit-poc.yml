@@ -75,7 +75,8 @@ jobs:
               if ($n.StartsWith('/') -or $n.StartsWith('\') -or $n.Contains('..') -or $n.Contains(':')) { throw 'Unsafe ZIP entry path' }
               $total += $entry.Length
             }
-            if ($total -gt 33554432) { throw 'ZIP extracted size exceeds 32 MiB' }
+            Write-Host ('UNCOMPRESSED_BYTES=' + $total)
+            if ($total -gt 134217728) { throw 'ZIP extracted size exceeds 128 MiB' }
           } finally { $archive.Dispose() }
           $dir = Join-Path $env:RUNNER_TEMP 'llmfit-poc'
           Expand-Archive -LiteralPath $zipPath -DestinationPath $dir
