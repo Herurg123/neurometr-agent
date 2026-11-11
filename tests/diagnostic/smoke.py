@@ -95,7 +95,20 @@ def main():
         print("A3_2_PII_SCAN=PASS")
         print("A3_2_NO_CATALOG_FAIL_CLOSED=PASS")
         print("A3_2_NO_LLMFIT_OFFLINE=PASS")
-        print(f"A3_2_HARDWARE_MS={hardware_ms} TOTAL_MS={total_ms} JSON_BYTES={json_bytes} GPU_ENTRIES={len(result['hardware']['gpus'])}")
+        cpu = result["hardware"]["cpu"]
+        os_info = result["hardware"]["os"]
+        gpus = result["hardware"]["gpus"]
+        gpu_dedicated_known = sum(1 for gpu in gpus if gpu["memory"]["dedicated_total_bytes"] is not None)
+        gpu_shared_known = sum(1 for gpu in gpus if gpu["memory"]["shared_total_bytes"] is not None)
+        print(f"A3_2_HARDWARE_MS={hardware_ms} TOTAL_MS={total_ms} JSON_BYTES={json_bytes} GPU_ENTRIES={len(gpus)}")
+        print("A3_2_FIELD_COVERAGE OS_VERSION_KNOWN=%s CPU_MODEL_KNOWN=%s CPU_PHYSICAL_CORES_KNOWN=%s CPU_LOGICAL_KNOWN=%s RAM_TOTAL_KNOWN=%s RAM_AVAILABLE_KNOWN=%s GPU_DEDICATED_CAPACITY_KNOWN=%d GPU_SHARED_CEILING_KNOWN=%d NPU_PROBED=false" % (
+            str(os_info["version"] is not None).lower(),
+            str(cpu["model"] is not None).lower(),
+            str(cpu["physical_cores"] is not None).lower(),
+            str(cpu["logical_processors"] is not None).lower(),
+            str(result["hardware"]["ram"]["physical_total_bytes"] is not None).lower(),
+            str(result["hardware"]["ram"]["available_bytes"] is not None).lower(),
+            gpu_dedicated_known,gpu_shared_known))
         # No JSON output/log is emitted; TemporaryDirectory removes all reports.
 
 if __name__ == "__main__":
