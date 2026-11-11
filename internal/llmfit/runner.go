@@ -72,18 +72,20 @@ type Result struct {
  ExitCode int
 }
 type limitedBuffer struct{
- bytes.Buffer
+ buf bytes.Buffer
  limit int
  overflow bool
 }
+func (w *limitedBuffer) Len() int {return w.buf.Len()}
+func (w *limitedBuffer) Bytes() []byte{return w.buf.Bytes()}
 func (w *limitedBuffer) Write(p []byte)(int,error){
  if w.Len()+len(p)>w.limit {
   w.overflow=true
   rem:=w.limit-w.Len()
-  if rem>0 {_,_=w.Buffer.Write(p[:rem])}
+  if rem>0 {_,_=w.buf.Write(p[:rem])}
   return 0,errors.New("output cap exceeded")
  }
- return w.Buffer.Write(p)
+ return w.buf.Write(p)
 }
 func failure(kind Failure,exit int,err error)error{return &CLIError{Kind:kind,ExitCode:exit,Err:err}}
 func verifyExecutable(path,sha string)error{
