@@ -13,7 +13,6 @@ import (
  "fmt"
  "os"
  "path/filepath"
- "regexp"
  "unicode"
  "strings"
  "time"
@@ -61,35 +60,44 @@ type Result struct {
 func evidence(kind, source string) map[string]any {
  return map[string]any{"kind":kind,"source":source}
 }
-// scrubModelName is defense in depth against device labels containing
-// host paths, e-mail, IP addresses or other unneeded personal identifiers.
-// It is applied even to injected collectors, not only Windows-native output.
-var sensitiveName = regexp.MustCompile(`(?i)(?:[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,}|(?:[0-9]{1,3}.){3}[0-9]{1,3}|[a-z]:\|\\|https?://|/users/|/home/|password|token|secret)`)
+// scrubModelName drops untrusted device labels that could disclose user
+// identity, host paths, IPs or other information not required by A3.2.
 func scrubModelName(v any)any{
  name,ok:=v.(string)
  if !ok{return nil}
  name=strings.TrimSpace(name)
- if name==""||len(name)>180||sensitiveName.MatchString(name){return nil}
- for _,ch:=range name{if unicode.IsControl(ch)||ch==' '||ch==' '{return nil}}
+ if name==""||len(name)>180{return nil}
+ low:=strings.ToLower(name)
+ for _,secret:=range []string{"/users/","/home/","password","token","secret","://",".local"}{
+  if strings.Contains(low,secret){return nil}
+ }
+ if strings.ContainsRune(name,rune(92)){return nil}
+ if strings.ContainsRune(name,'@')&&!strings.Contains(name," @ "){return nil}
+ for _,token:=range strings.FieldsFunc(name,func(r rune)bool{return !unicode.IsDigit(r)&&r!='.'}){
+  parts:=strings.Split(token,".")
+  if len(parts)==4{
+   looksLikeIPv4:=true
+   for _,part:=range parts{
+    if part==""||len(part)>3{looksLikeIPv4=false;break}
+    for _,digit:=range part{if digit<'0'||digit>'9'{looksLikeIPv4=false}}
+   }
+   if looksLikeIPv4{return nil}
+  }
+ }
+ for _,ch:=range name{if unicode.IsControl(ch)||ch==rune(0x2028)||ch==rune(0x2029){return nil}}
  return name
 }
 func scrubHardware(h map[string]any){
- if cpu,ok:=h["cpu"].(map[string]any);ok{
-  cpu["model"]=scrubModelName(cpu["model"])
- }
+ if cpu,ok:=h["cpu"].(map[string]any);ok{cpu["model"]=scrubModelName(cpu["model"])}
  if osValue,ok:=h["os"].(map[string]any);ok{
   if version,ok:=osValue["version"].(string);ok{
-   if len(version)>32||strings.ContainsAny(version," 
-	\/") {osValue["version"]=nil}
+   if len(version)>32||strings.ContainsAny(version,string([]rune{32,10,13,9,92,47})){osValue["version"]=nil}
   }
  }
  if gpus,ok:=h["gpus"].([]any);ok{
-  for _,row:=range gpus{
-   if g,ok:=row.(map[string]any);ok{g["name"]=scrubModelName(g["name"])}
-  }
+  for _,row:=range gpus{if g,ok:=row.(map[string]any);ok{g["name"]=scrubModelName(g["name"])}}
  }
 }
-
 func unknownOS()map[string]any{
  return map[string]any{"family":"windows","version":nil,"arch":"x64","evidence":evidence("unknown","agent:windows-api:unavailable")}
 }
