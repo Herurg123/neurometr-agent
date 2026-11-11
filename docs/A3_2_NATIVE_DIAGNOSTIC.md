@@ -25,9 +25,9 @@ All mandatory probes use direct bounded Windows-native APIs with **no PowerShell
 
 The **approved diagnostic v0.1.0 schema requires `catalog_ref.version`, `catalog_ref.sha256`, `catalog_ref.origin` and `catalog_ref.compatibility`**. No approved production catalog is shipped in Agent yet. A report generated with `catalog_ref` claiming a made-up 'bundled' production catalog would be false.
 
-- A3.2 **does not invent a production catalog** and does not change the canonical schema or fixtures. The private CLI requires `-catalog` to be a **real, user-explicit local path**. The file must be regular, within the 20 MiB catalog budget, and pass `FullValidator.ValidateBytes("catalog", raw)`; `catalog_ref.version` comes from actual `catalog_version`, `sha256` is of its exact bytes and `origin=cached` means the explicitly supplied local file, not a remote-authenticated source. `compatibility=passed` means structural/semantic v0.1.0 compatibility **only**. The diagnostic limitations explicitly state that publisher signature/provenance was **not** verified.
-- When the local catalog is absent, the exporter **fails closed with `ErrCatalogRequired`**, does not emit `diagnostic.json`, and reports this as a blocking dependency to the orchestrator. The strictly local hardware probes themselves do **not** require a catalog. This is a truthful partial A3.2 acceptance gate until the orchestrator approves a genuine bundled catalog/source and trust policy.
-- Cloud CI **only** uses canonical synthetic `catalog_valid.json` with explicit `-test-only-catalog`, `NEUROMETR_A3_TEST_ONLY=1` and a prominent `TEST ONLY` limitation inside the resulting JSON. Production mode refuses that fixture. This verifies the **real Windows hardware path** and contract generator, but its catalog reference must **not** be presented as a real production catalog. The private runner JSON is deleted after CI and never uploaded.
+- **Ordinary export is now fail-closed for *all* catalog paths**, regardless of valid JSON Schema, byte size, SHA-256 or where a valid fixture was copied. No production trust anchor, bundled catalog or publisher-verification policy was approved, so the exporter cannot truthfully produce a production report. Passing `-catalog` in normal mode does **not** grant trust. No canonical schemas or fixtures were modified.
+- For an ordinary call, `Generate` returns **`ErrCatalogRequired` before collecting hardware** and emits **no JSON**, whether catalog is missing, copied from the canonical fixture to an external folder, or is otherwise structurally valid. The standalone native hardware probes remain independently callable. Production export requires a *separately approved* catalog/trust design, not a new arbitrary caller-supplied file.
+- Cloud CI **only** uses the exact SHA-pinned `contracts/fixtures/catalog_valid.json` with explicit `-test-only-catalog` and `NEUROMETR_A3_TEST_ONLY=1`, plus a mandatory `TEST ONLY` limitation in the resulting JSON. Test mode verifies the file is the **same pinned fixture** (`os.SameFile` after `Lstat`, excluding external copies/symlinks) and applies `FullValidator.ValidateBytes("catalog", raw)`. Its `catalog_ref.sha256` is the fixture digest and `compatibility=passed` means schema compatibility, **not publisher trust**. CI deletes the private report without uploading it. The test-only opt-in must not be exposed as a production trust mechanism.
 
 ## Testing
 
@@ -41,11 +41,25 @@ The **approved diagnostic v0.1.0 schema requires `catalog_ref.version`, `catalog
 
 ## Acceptance limitations / next gate
 
-1. No production signed/bundled catalog exists yet, so the production CLI deliberately refuses to create a fully claimed diagnostic without a supplied compatible catalog. **Orchestrator decision required**: approve a real bundled catalog (possibly an explicitly defined empty bootstrap snapshot, with provenance and version) or a contract evolution that can truthfully represent a missing catalog. Neither is silently implemented here.
+1. No approved production catalog or trust anchor exists yet, so **all ordinary diagnostic exports are blocked**, including copied fixtures and arbitrary schema-valid local catalogs. **Orchestrator decision required**: approve a real bundled catalog (possibly an explicitly defined empty bootstrap snapshot, with provenance and version) or a contract evolution that can truthfully represent a missing catalog. Neither is silently implemented here.
 2. Windows DXGI detection reports adapter memory ceilings, not tested GPU runtime, and can omit unsupported devices. NPU remains untested. CPU core/API accessibility varies with Windows virtualization.
 3. Hardware-timeout bounds cover caller return, not forcible native API cancellation. Performance of individual API stages should be reviewed on owner hardware later.
 4. Secure local GUI, report history, public binaries, cloud consent checks, Ed25519 catalog trust, real model ranking and user-machine smoke are **outside A3.2**.
 
+## A3.2 review fixes: explicit regression matrix
+
+**Catalog trust fix:** `TestCopiedCatalogCannotBypassProductionGate` copies the canonical synthetic fixture byte-for-byte into an external temporary directory, confirms full catalog schema validation succeeds, and verifies ordinary `Generate()` returns `ErrCatalogRequired` and zero JSON bytes. The same copied file is rejected even in test-only mode. Windows native smoke independently attempts ordinary CLI export with the external copy, requiring nonzero exit and no output file (`A3_2_COPIED_CATALOG_PRODUCTION_BYPASS=BLOCKED`). The pinned original fixture remains accepted only in explicit test-only mode.
+
+**Status fix:** `overall_status` follows `contracts/STATUS_EXECUTION_INVARIANTS.md`: usable component + degraded component ⇒ `partial`; no usable component and an attempted failure ⇒ `failed`; usable components without degradation ⇒ `ok`.
+
+| Hardware | llmfit | Expected overall | Full validator |
+|---|---|---|---|
+| failed | ok (mock CLI) | **partial** | required PASS |
+| failed | skipped | **failed** | required PASS |
+| failed | failed (missing CLI) | **failed** | required PASS |
+| ok | failed (missing CLI) | **partial** | required PASS |
+
+Every row asserts component statuses, error counts and canonical `FullValidator.ValidateBytes("diagnostic", ...)` acceptance. It does not test inference, publisher authenticity or llmfit hardware performance.
 ## Cloud acceptance evidence (confirmed, 11 November 2026)
 
 - [GitHub Actions run **43081281784**](https://github.com/Herurg123/neurometr-agent/actions/runs/43081281784) on code HEAD `9dee0138d700cbb05f092515864f5f76681725cd`: **3/3 jobs success**, with no FAIL. Ubuntu 24.04 Go tests: **169 PASS markers**, 0 FAIL, 2 expected upstream-CLI live SKIPs. Windows 2025 x64 Go tests: **169 PASS markers**, 0 FAIL, 2 expected SKIPs. The test inventory includes canonical F01–F08 and the newly added diagnostic negative suites.
