@@ -5,3 +5,6 @@ contracts/** text eol=lf
 # Preserve pinned Go dependency graph bytes across Windows and Ubuntu.
 go.mod text eol=lf
 go.sum text eol=lf
+
+# A3.3: offline catalog bytes MUST match the approved Web snapshot on Windows.
+bundled/** text eol=lf

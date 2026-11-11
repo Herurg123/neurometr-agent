@@ -17,6 +17,7 @@ import (
  "strings"
  "time"
 
+ "github.com/Herurg123/neurometr-agent/internal/catalogpin"
  "github.com/Herurg123/neurometr-agent/internal/contract"
  "github.com/Herurg123/neurometr-agent/internal/llmfit"
 )
@@ -25,7 +26,7 @@ const ProducerVersion = "0.1.0"
 const ProbeBudget = 1500 * time.Millisecond
 const FastBudget = 8 * time.Second
 
-var ErrCatalogRequired = errors.New("A3.2: no approved production catalog/trust policy; ordinary diagnostic export is disabled")
+var ErrCatalogRequired = errors.New("A3.3: approved bundled catalog missing, corrupted or incompatible; no local catalog override allowed")
 var ErrNotWindows = errors.New("native Windows x64 diagnostics only")
 
 type Probe func(context.Context) (map[string]any,error)
@@ -176,7 +177,14 @@ func collect(ctx context.Context,probes Probes,perProbe time.Duration) hardware{
 // Only the canonical pinned fixture is admitted in explicitly marked CI test mode.
 // A later, separately approved trust policy must replace this fail-closed gate.
 func catalogRef(v *contract.FullValidator,root string,opts Options)(map[string]any,error){
- if !opts.AllowTestCatalog{return nil,ErrCatalogRequired}
+ if !opts.AllowTestCatalog{
+  // Never promote caller-provided local files or environment variables to
+  // the approved bundled trust root, even if their bytes happen to match.
+  if opts.CatalogPath!="" {return nil,ErrCatalogRequired}
+  ref,err:=catalogpin.Verify(root,v)
+  if err!=nil{return nil,fmt.Errorf("%w: %v",ErrCatalogRequired,err)}
+  return ref.Fields(),nil
+ }
  if os.Getenv("NEUROMETR_A3_TEST_ONLY")!="1"{
   return nil,errors.New("test-only catalog mode is not enabled")
  }
@@ -216,8 +224,8 @@ func utc(t time.Time)string{return t.UTC().Format(time.RFC3339Nano)}
 // Generate returns JSON only after a successful full schema and semantic check.
 // Hardware does NOT require the llmfit binary or any network connectivity.
 // Approved catalog provenance is required by canonical v0.1.0 catalog_ref.
-// As A3.2 has no trusted production catalog, normal export fails closed;
-// only the exact pinned fixture is accepted in explicit test-only mode.
+// Normal export trusts only exact B3.1 bundled bytes and build-pinned metadata;
+// the isolated canonical fixture is still accepted only in CI test-only mode.
 func Generate(ctx context.Context,opts Options,probes Probes)(Result,error){
  started:=time.Now().UTC()
  result:=Result{}
@@ -241,7 +249,11 @@ func Generate(ctx context.Context,opts Options,probes Probes)(Result,error){
  engines:=[]any{}
  llmfitStatus:="skipped"
  limitations:=h.limitations
- limitations=append(limitations,"TEST ONLY: pinned synthetic catalog was schema-validated, not authenticated as a production catalog.")
+ if opts.AllowTestCatalog{
+  limitations=append(limitations,"TEST ONLY: pinned synthetic catalog was schema-validated, not authenticated as a production catalog.")
+ }else{
+  limitations=append(limitations,"Bundled catalog identity was verified against the owner-approved offline SHA-256 pin; no remote publisher signature or update was checked.")
+ }
  
  if opts.LLMFitExecutable!=""{
   timeBudget:=opts.LLMFitTimeout

@@ -1,5 +1,5 @@
-// diagnose is an A3.2 test/CI-only, no-server Windows x64 JSON exporter.
-// A verified local catalog is required by canonical diagnostic v0.1.0.
+// diagnose is a no-server Windows x64 offline JSON exporter.
+// Normal mode uses only the owner-approved, byte-pinned bundled catalog.
 package main
 
 import (
@@ -17,22 +17,33 @@ import (
 
 func main(){
  root:=flag.String("root",".","Agent source root with pinned contracts")
- catalog:=flag.String("catalog","","CI test-only pinned catalog fixture; ordinary export disabled until trust policy approved")
+ catalog:=flag.String("catalog","","CI test-only fixture path; forbidden in normal export")
  output:=flag.String("output","","private destination for the fully validated diagnostic JSON")
  exe:=flag.String("llmfit","","optional absolute llmfit v1.1.20 executable; not needed for hardware")
  sha:=flag.String("llmfit-sha256","","optional expected SHA-256 for enabled llmfit")
- fixture:=flag.Bool("test-only-catalog",false,"CI ONLY: allow clearly marked synthetic catalog fixtures")
+ fixture:=flag.Bool("test-only-catalog",false,"CI ONLY: use exact pinned synthetic fixture (never production)")
  flag.Parse()
  if runtime.GOOS!="windows"||runtime.GOARCH!="amd64"{
   fmt.Fprintln(os.Stderr,"A3.2 native export is only supported on Windows x64")
   os.Exit(2)
  }
- if *catalog==""||*output==""{
-  fmt.Fprintln(os.Stderr,"A3.2 requires -catalog and -output; no catalog is invented")
+ if *output==""{
+  fmt.Fprintln(os.Stderr,"A3.3 requires -output; bundled catalog is used automatically")
+  os.Exit(2)
+ }
+ if !*fixture && *catalog!=""{
+  fmt.Fprintln(os.Stderr,"CATALOG_OVERRIDE_FORBIDDEN: normal export uses only the approved bundled catalog")
+  os.Exit(2)
+ }
+ if *fixture && *catalog==""{
+  fmt.Fprintln(os.Stderr,"test-only mode requires an explicit pinned fixture path")
   os.Exit(2)
  }
  absRoot,err:=filepath.Abs(*root);if err!=nil{os.Exit(2)}
- absCatalog,err:=filepath.Abs(*catalog);if err!=nil{os.Exit(2)}
+ absCatalog:=""
+ if *fixture{
+  absCatalog,err=filepath.Abs(*catalog);if err!=nil{os.Exit(2)}
+ }
  absOutput,err:=filepath.Abs(*output);if err!=nil{os.Exit(2)}
  if *exe!="" && !filepath.IsAbs(*exe){fmt.Fprintln(os.Stderr,"llmfit path must be absolute");os.Exit(2)}
  start:=time.Now()
@@ -42,9 +53,9 @@ func main(){
  },diagnostic.NativeProbes())
  if err!=nil{
   if errors.Is(err,diagnostic.ErrCatalogRequired){
-   fmt.Fprintln(os.Stderr,"CATALOG_BLOCKER: no approved trusted catalog; ordinary export is disabled")
+   fmt.Fprintln(os.Stderr,"CATALOG_BLOCKER: approved pinned bundled catalog missing, modified or incompatible")
   }else{
-   fmt.Fprintln(os.Stderr,"A3.2 validation/collection error:",err)
+   fmt.Fprintln(os.Stderr,"A3.3 validation/collection error:",err)
   }
   os.Exit(1)
  }
