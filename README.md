@@ -14,3 +14,7 @@ Windows-first Go agent for Neurometr. Implementation has **not** started beyond 
 F07 validates simulated hash/size/trust-flag rejection, **not Ed25519 verification**. `not_applied` overrides only pass the data contract; actual llmfit CLI acceptance is untested.
 
 Both PRs remain Draft until orchestrator review. No merge, binary release, hardware/cloud probes, heavy benchmark, remote updates or production work is authorized.
+
+## A2 llmfit CLI PoC
+
+Cloud-only Draft PR: [official v1.1.20 Windows CLI, bounded Go subprocess adapter, negative mock tests and Windows Actions evidence](docs/A2_LLMFIT_POC.md). Full Go JSON Schema validation remains mandatory before normalized diagnostic acceptance. No merge/release authorized.

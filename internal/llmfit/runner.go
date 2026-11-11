@@ -20,7 +20,8 @@ import (
 )
 
 const Version = "1.1.20"
-const maxStdout = 2 * 1024 * 1024
+// Raw CLI may exceed the diagnostic.json wire limit; keep separate bounds.
+const maxStdout = 8 * 1024 * 1024
 const maxStderr = 256 * 1024
 const maxBinary = 128 * 1024 * 1024
 
@@ -70,6 +71,7 @@ type Result struct {
  Stderr []byte
  Duration time.Duration
  ExitCode int
+ StdoutBytes int
 }
 type limitedBuffer struct{
  buf bytes.Buffer
@@ -153,11 +155,9 @@ func checkVersion(ctx context.Context,exe string)(string,error){
  out,_,_,code,err:=launch(ctx,exe,[]string{"--version"},"")
  if err!=nil{return "",err}
  s:=strings.TrimSpace(string(out))
- valid:=strings.Contains(strings.ToLower(s),"llmfit")
- exact:=false
- for _,part:=range strings.Fields(s){if part==Version{exact=true}}
- if !valid||!exact{return s,failure(VersionMismatch,code,fmt.Errorf("expected llmfit %s",Version))}
- return s,nil
+ parts:=strings.Fields(s)
+ if len(parts)!=2||parts[1]!=Version||!strings.HasPrefix(strings.ToLower(parts[0]),"llmfit"){return s,failure(VersionMismatch,code,fmt.Errorf("expected llmfit %s",Version))}
+  return s,nil
 }
 func ProbeVersion(ctx context.Context,exe string,timeout time.Duration)(string,error){
  if err:=verifyExecutable(exe,"");err!=nil{return "",err}
@@ -187,7 +187,7 @@ func Run(ctx context.Context,r Request)(Result,error){
  c,cancel:=context.WithTimeout(ctx,r.Timeout);defer cancel()
  version,err:=checkVersion(c,r.Executable);if err!=nil{return result,err};result.Version=version
  stdout,stderr,elapsed,code,err:=launch(c,r.Executable,args,r.CustomModelsPath)
- result.Duration=elapsed;result.ExitCode=code;result.Stderr=stderr
+ result.Duration=elapsed;result.ExitCode=code;result.Stderr=stderr;result.StdoutBytes=len(stdout)
  if err!=nil{return result,err}
  doc,err:=contract.DecodeBounded(stdout,maxStdout)
  if err!=nil{return result,failure(InvalidJSON,code,err)}

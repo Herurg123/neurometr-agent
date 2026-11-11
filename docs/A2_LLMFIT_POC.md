@@ -52,4 +52,10 @@ Workflow `.github/workflows/a2-llmfit-poc.yml`: mock subprocess tests on Ubuntu 
 
 ## CI outcome
 
-Pending verified PR-triggered GitHub Actions runs. Complete only from actual job logs, with any discrepancies documented.
+**Verified prior real CLI evidence:** [Windows CI run 43061260905](https://github.com/Herurg123/neurometr-agent/actions/runs/43061260905), official signed v1.1.20. Verified ZIP length 6,878,103 bytes, SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`, uncompressed 38,006,373 bytes, Authenticode `Valid`, `--version` = `llmfit 1.1.20`.
+
+- Real `system` exit 0 (~60.18 s), `fit -n 5` exit 0 (~49.71 s), `recommend --limit 5` exit 0 (~51.80 s). Runner timings are NOT owner-hardware benchmarks.
+- Real `list` triggered the initial raw CLI stdout 2 MiB cap and upstream broken pipe. The A2 raw output cap is now 8 MiB; **`diagnostic.json` stays <=2 MiB**.
+- Real `LLMFIT_CUSTOM_MODELS`: baseline synthetic search returned 0. Two temporary synthetic overlays were recognized by `search`. For ProbeA 1B: `fit_level=Good`, `memory_required_gb=1.58`, `estimated_tps=16.8`, `score=57.7`; for 120B: `Too Tight`, `74.03`, `0.2`, `46.2`. These are estimates, not benchmarks.
+- Real provider-filtered fit ranking changed `ProbeA,ProbeB` to `ProbeB,ProbeA`. **Custom fit and ranking effects confirmed** for the tested fields. Does NOT prove arbitrary canonical overrides or replacement of an embedded catalog model.
+- That run failed overall only because real `list` exceeded the first cap. Final all-green Windows CI still required for the revised limit and WaitDelay.

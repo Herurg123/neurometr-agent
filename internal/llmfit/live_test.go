@@ -29,7 +29,7 @@ func TestLivePinnedCLI(t *testing.T) {
    case []any:n=len(doc)
    case map[string]any:if a,ok:=doc["models"].([]any);ok{n=len(a)}
    }
-   t.Logf("LIVE_OPERATION=%s EXIT=%d ELAPSED=%s MODELS=%d STDERR_BYTES=%d",op,r.ExitCode,r.Duration,n,len(r.Stderr))
+   t.Logf("LIVE_OPERATION=%s EXIT=%d ELAPSED=%s MODELS=%d STDOUT_BYTES=%d STDERR_BYTES=%d",op,r.ExitCode,r.Duration,n,r.StdoutBytes,len(r.Stderr))
   })
  }
 }

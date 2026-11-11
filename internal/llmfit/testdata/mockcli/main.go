@@ -21,7 +21,7 @@ func main(){
  case "malformed":fmt.Println("{broken")
  case "trailing":fmt.Print(`{"system":{}}{"system":{}}`)
  case "wrong_shape":fmt.Println(`{"no_system":true}`)
- case "too_large":fmt.Print(strings.Repeat("x",3*1024*1024))
+ case "too_large":fmt.Print(strings.Repeat("x",9*1024*1024))
  case "sleep":time.Sleep(10*time.Second);fmt.Println(`{"system":{}}`)
  case "warning":
   fmt.Fprintln(os.Stderr,"synthetic informational warning")
