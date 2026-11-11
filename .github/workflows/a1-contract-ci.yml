@@ -6,6 +6,7 @@ on:
       - "internal/contract/**"
       - "cmd/contractcheck/**"
       - "go.mod"
+      - ".gitattributes"
       - ".github/workflows/a1-contract-ci.yml"
   workflow_dispatch:
 
@@ -30,6 +31,7 @@ jobs:
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
         with:
           go-version-file: go.mod
+          cache: false
       - name: Check canonical pinned byte hashes and schema headers
         run: go run ./cmd/contractcheck -root .
       - name: Go unit, semantic and portable-numeric regressions
