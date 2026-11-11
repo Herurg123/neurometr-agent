@@ -25,7 +25,7 @@ const ProducerVersion = "0.1.0"
 const ProbeBudget = 1500 * time.Millisecond
 const FastBudget = 8 * time.Second
 
-var ErrCatalogRequired = errors.New("A3.2: a validated non-synthetic local catalog is required; no production catalog was approved")
+var ErrCatalogRequired = errors.New("A3.2: no approved production catalog/trust policy; ordinary diagnostic export is disabled")
 var ErrNotWindows = errors.New("native Windows x64 diagnostics only")
 
 type Probe func(context.Context) (map[string]any,error)
@@ -171,32 +171,36 @@ func collect(ctx context.Context,probes Probes,perProbe time.Duration) hardware{
  return h
 }
 
-func isTestCatalogPath(root,p string) bool{
- fixture,_:=filepath.Abs(filepath.Join(root,"contracts","fixtures"))
- path,_:=filepath.Abs(p)
- rel,err:=filepath.Rel(fixture,path)
- return err==nil&&(rel=="."||(!strings.HasPrefix(rel,".."+string(os.PathSeparator))&&rel!=".."))
-}
-
+// A3.2 intentionally has no production catalog trust anchor. Mere structural
+// validity, local origin or a computed SHA-256 never establishes publisher trust.
+// Only the canonical pinned fixture is admitted in explicitly marked CI test mode.
+// A later, separately approved trust policy must replace this fail-closed gate.
 func catalogRef(v *contract.FullValidator,root string,opts Options)(map[string]any,error){
- if opts.CatalogPath==""{return nil,ErrCatalogRequired}
- if !filepath.IsAbs(opts.CatalogPath){return nil,errors.New("catalog path must be absolute")}
- if isTestCatalogPath(root,opts.CatalogPath)&&!opts.AllowTestCatalog{
-  return nil,errors.New("canonical synthetic fixtures cannot masquerade as production catalogs")
+ if !opts.AllowTestCatalog{return nil,ErrCatalogRequired}
+ if os.Getenv("NEUROMETR_A3_TEST_ONLY")!="1"{
+  return nil,errors.New("test-only catalog mode is not enabled")
  }
+ if opts.CatalogPath=="" {return nil,ErrCatalogRequired}
+ if !filepath.IsAbs(opts.CatalogPath){return nil,errors.New("test catalog path must be absolute")}
+ expectedPath:=filepath.Join(root,"contracts","fixtures","catalog_valid.json")
+ expectedInfo,err:=os.Stat(expectedPath)
+ if err!=nil{return nil,errors.New("pinned CI catalog fixture unavailable")}
  st,err:=os.Lstat(opts.CatalogPath)
- if err!=nil{return nil,errors.New("catalog unavailable")}
- if !st.Mode().IsRegular()||st.Size()>contract.CatalogLimit{return nil,errors.New("catalog is not a bounded regular file")}
+ if err!=nil{return nil,errors.New("test catalog unavailable")}
+ if !st.Mode().IsRegular()||st.Size()>contract.CatalogLimit||!os.SameFile(st,expectedInfo){
+  return nil,errors.New("test mode accepts only the exact pinned CI catalog fixture")
+ }
  b,err:=os.ReadFile(opts.CatalogPath)
- if err!=nil{return nil,errors.New("catalog could not be read")}
+ if err!=nil{return nil,errors.New("pinned test catalog could not be read")}
+ // NewFullValidator verified the SHA-256 lock for the pinned fixture above.
  obj,err:=v.ValidateBytes("catalog",b)
- if err!=nil{return nil,errors.New("catalog failed full v0.1.0 schema and semantic validation")}
+ if err!=nil{return nil,errors.New("pinned test catalog failed full v0.1.0 validation")}
  digest:=sha256.Sum256(b)
  return map[string]any{
   "version":obj["catalog_version"],
   "sha256":hex.EncodeToString(digest[:]),
   "origin":"cached",
-  // Schema compatibility only. This does not imply origin authentication.
+  // Test-only: schema compatibility does not prove producer authenticity.
   "compatibility":"passed",
  },nil
 }
@@ -211,8 +215,9 @@ func utc(t time.Time)string{return t.UTC().Format(time.RFC3339Nano)}
 
 // Generate returns JSON only after a successful full schema and semantic check.
 // Hardware does NOT require the llmfit binary or any network connectivity.
-// A verified local catalog is required solely because canonical v0.1.0
-// mandates catalog_ref, and an absent catalog cannot be truthfully invented.
+// Approved catalog provenance is required by canonical v0.1.0 catalog_ref.
+// As A3.2 has no trusted production catalog, normal export fails closed;
+// only the exact pinned fixture is accepted in explicit test-only mode.
 func Generate(ctx context.Context,opts Options,probes Probes)(Result,error){
  started:=time.Now().UTC()
  result:=Result{}
@@ -236,8 +241,8 @@ func Generate(ctx context.Context,opts Options,probes Probes)(Result,error){
  engines:=[]any{}
  llmfitStatus:="skipped"
  limitations:=h.limitations
- limitations=append(limitations,"Local catalog structure was validated but publisher signature/provenance was not verified by A3.2.")
- if opts.AllowTestCatalog{limitations=append(limitations,"TEST ONLY: catalog reference is a synthetic fixture, not a production catalog.")}
+ limitations=append(limitations,"TEST ONLY: pinned synthetic catalog was schema-validated, not authenticated as a production catalog.")
+ 
  if opts.LLMFitExecutable!=""{
   timeBudget:=opts.LLMFitTimeout
   if timeBudget<=0||timeBudget>30*time.Second{timeBudget=30*time.Second}
@@ -277,10 +282,16 @@ func Generate(ctx context.Context,opts Options,probes Probes)(Result,error){
  components=append(components,map[string]any{"component":"llmfit","status":llmfitStatus})
  components=append(components,map[string]any{"component":"cloud","status":"skipped"})
  result.LLMFitStatus=llmfitStatus
+ // STATUS_EXECUTION_INVARIANTS.md: partial needs usable hardware or
+ // llmfit work and a degraded component. Failed means no usable component.
  overall:="ok"
- if h.status!="ok"||llmfitStatus=="failed"{overall="partial"}
- // If every attempted subsystem failed, there is no usable diagnostic.
- if h.status=="failed"{overall="failed"}
+ degraded:=h.status=="partial"||h.status=="failed"||llmfitStatus=="failed"
+ usable:=h.status=="ok"||h.status=="partial"||llmfitStatus=="ok"
+ if !usable {
+  overall="failed"
+ }else if degraded{
+  overall="partial"
+ }
  report:=map[string]any{
   "kind":"neurometr.diagnostic",
   "schema_version":"0.1.0",
