@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -83,6 +84,19 @@ def main():
         blocked = Path(td) / "no-catalog.json"
         missing = go(["./cmd/diagnose","-root",str(ROOT),"-output",str(blocked)],env=env,expect_success=False)
         assert missing.returncode != 0 and not blocked.exists(), "missing catalog yielded fake report"
+        # Identical valid fixture bytes outside contracts/fixtures must NOT
+        # become a trusted production catalog via path relocation or SHA-256.
+        copied = Path(td) / "copied-catalog.json"
+        shutil.copyfile(catalog, copied)
+        assert copied.read_bytes() == catalog.read_bytes()
+        copied_output = Path(td) / "copied-catalog-export.json"
+        bypass = go(["./cmd/diagnose","-root",str(ROOT),
+                     "-catalog",str(copied),"-output",str(copied_output)],
+                    env=env,expect_success=False)
+        assert bypass.returncode != 0 and not copied_output.exists(), (
+            "ordinary export trusted schema-valid copied fixture")
+        print("A3_2_COPIED_CATALOG_PRODUCTION_BYPASS=BLOCKED")
+
         summary = run.stdout.decode("utf-8",errors="replace").strip()
         match = re.search(r"HARDWARE_MS=(\d+)\s+TOTAL_MS=(\d+)\s+JSON_BYTES=(\d+)",summary)
         assert match, "diagnostic timing metadata absent"
