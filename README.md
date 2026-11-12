@@ -11,18 +11,31 @@
 
 В исходниках Agent реализованы нативный сбор Windows CPU/RAM/GPU, обработка частичных ошибок, **обычный офлайн-экспорт диагностического JSON v0.1.0** с проверенным комплектным каталогом и защищённый localhost-интерфейс с локальной историей. Для быстрой аппаратной диагностики не нужны обязательный llmfit или Интернет. Результаты проходят JSON Schema Draft 2020-12 и семантические проверки.
 
-**Статус:** [A3.4 PR #7](https://github.com/Herurg123/neurometr-agent/pull/7) объединён в `main` коммитом `a396f251289ca4a135a2ef9056c3aafe95a7eca0`, подтверждён Windows/Ubuntu CI и локальным браузерным smoke только на облачном runner. G4.1 готовит **только внутреннюю CI-сборку ZIP**, не публичный релиз и не испытание на компьютере владельца. Модели не загружаются, реальная работа и TPS не измеряются.
+**Статус:** [A3.4 PR #7](https://github.com/Herurg123/neurometr-agent/pull/7) и [G4.1 PR #8](https://github.com/Herurg123/neurometr-agent/pull/8) **объединены в `main`**. В G4.1 внутренний Windows ZIP уже собран и проверен на облачном Windows runner; [CI #43260151749](https://github.com/Herurg123/neurometr-agent/actions/runs/43260151749) на merge commit `dbdd5984823be88eacc407046af12cd86e8d154f` — 3/3 PASS. Пользовательский компьютер, реальные модели и TPS не проверялись. Публичного GitHub Release нет.
 
-## Текущая ограниченная разработка G4.1
+## G4.2 — готовность к отдельному merge (Draft PR #9)
 
-**G4.1 (Draft PR #8):** автономный Windows x64 ZIP **собран и успешно проверен только внутри CI**, но **не опубликован**. Внутри: `Neurometr.exe` с существующим защищённым localhost UI/историей, официальный `bin/llmfit.exe` v1.1.20, канонические контракты, bundled-каталог, русские инструкции, полные сторонние лицензии и manifest размеров/SHA-256. Быстрая диагностика не запускает llmfit, модели, бенчмарки и сетевые проверки. Испытано на распакованном ZIP облачного Windows runner, **не на ПК владельца**.
+[Draft PR #9](https://github.com/Herurg123/neurometr-agent/pull/9) готовит выдачу тестового Windows x64 ZIP только через GitHub Actions artifacts на main после успешного CI. Merge в main, GitHub Release и коммерческая поставка НЕ разрешены. Исходники Agent не получают OSS-лицензию.
 
-- [Спецификация G4.1](docs/G4_1_INTERNAL_WINDOWS_ZIP.md) и [Draft PR #8](https://github.com/Herurg123/neurometr-agent/pull/8).
-- Официальный llmfit закреплён на v1.1.20; архив SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`. Во время CI скачивается только этот архив, после проверки Authenticode/`--version`. В GitHub Releases или публичные artifacts ZIP **не загружается**.
-- **Блокеры публичного релиза:** собственная лицензия Agent не утверждена; полного аудита транзитивных Rust-зависимостей llmfit ещё нет; реальное тестирование Windows пользователя ожидается в отдельно согласованном G4.2. [Источники и notices](packaging/THIRD_PARTY_NOTICES_RU.txt).
-- [Windows/Ubuntu CI #43243043079](https://github.com/Herurg123/neurometr-agent/actions/runs/43243043079): **3/3 PASS**; на каждой платформе **218 PASS, 0 FAIL, 2 ожидаемых SKIP**. Реальный распакованный Windows ZIP, контроль Authenticode/версии llmfit, работа без SDK, повторный запуск и история, Go/Python FullValidator и 6 негативных сценариев ZIP прошли. Внутренний архив **не загружался в artifacts** и был удалён.
+**Независимые статусы:** LEGAL_COMPLIANCE=PASS возможен только после автоматической проверки оригинальных сторонних лицензий/NOTICE и MPL source; BINARY_PROVENANCE=NOT_VERIFIED (нет независимого binary Rust SBOM/attestation встроенного JS); OWNER_RISK_ACCEPTANCE=APPROVED (владелец явно принял этот риск исключительно для тестовой сборки).
+
+- На Windows CI проверяются pinned llmfit v1.1.20, SHA-256 официального ZIP и Authenticode, 215 Rust source crates, оригинальные license/NOTICE и переходные MIT/Apache rmcp; пять npm MIT, специальные AND/Unicode, соответствующие MPL .crate по HTTPS+SHA. Аудит: packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt.
+- После Go tests/Windows smoke и двух детерминированных ZIP, manifest и catalog/contract pins, gate разрешает ZIP и SHA256SUMS.txt только на main для push/dispatch. Из PR и feature-веток artifact никогда не публикуется.
+- [Инструкция и полные ограничения G4.2](docs/G4_2_ACTIONS_ARTIFACT.md), [OSS-атрибуции и MPL-source](packaging/THIRD_PARTY_NOTICES_RU.txt), [принятие риска](packaging/G4_2_OWNER_RISK_ACCEPTANCE_RU.txt).
+- E+A, pinned llmfit, контракты, каталог, Web остаются без изменений.
 
 ## История реализации: от нового к старому
+
+### G4.2. Тестовый Actions artifact и отдельная legal-проверка
+
+- Draft PR #9: отделены обязательные third-party notices от независимой бинарной аттестации, которую владелец не требует для тестового дистрибутива. Ветка не объединена с main, публикация из PR запрещена.
+
+
+### G4.1. Автономный Windows x64 ZIP, внутренняя CI-приёмка
+
+- [PR #8](https://github.com/Herurg123/neurometr-agent/pull/8) объединён в `main` коммитом `dbdd5984823be88eacc407046af12cd86e8d154f`. Зафиксированы E+A, локальный UI/история, комплектный llmfit v1.1.20, доверенный каталог и контракт v0.1.0.
+- [GitHub Actions #43260151749](https://github.com/Herurg123/neurometr-agent/actions/runs/43260151749): 3/3 PASS; из утверждённого merge commit проверен внутренний ZIP размером **12 843 925 байт**, SHA-256 `df5b8351be89449d3e554c0cc6120d9ff741fcd4ce834f980c9a7033953527a1`. Это хэш только указанного commit, не универсальная контрольная сумма будущих сборок.
+- Выполнены воспроизводимая сборка, проверка официального llmfit (SHA, версия, Authenticode), аппаратная диагностика без SDK и `-root`, история/экспорт, Go/Python FullValidator и негативные тесты ZIP. До решения G4.2 этот ZIP был только внутренним CI-файлом, без публикации.
 
 ### A3.4. Защищённый localhost UI и локальная история
 

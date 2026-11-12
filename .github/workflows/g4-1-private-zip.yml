@@ -1,5 +1,7 @@
-name: G4.1 private pinned Windows ZIP (NO PUBLIC ARTIFACTS)
+name: G4.2 verified Windows ZIP (legal check + accepted provenance risk)
 on:
+  push:
+    branches: [main]
   pull_request:
     paths:
       - 'internal/g4bundle/**'
@@ -7,7 +9,9 @@ on:
       - 'tests/g4/**'
       - 'packaging/**'
       - 'docs/G4_1_INTERNAL_WINDOWS_ZIP.md'
+      - 'docs/G4_2_ACTIONS_ARTIFACT.md'
       - 'README.md'
+      - '.gitattributes'
       - '.github/workflows/g4-1-private-zip.yml'
   workflow_dispatch:
 
@@ -51,7 +55,7 @@ jobs:
         run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false '-ldflags=-buildid=' -o "$RUNNER_TEMP/Neurometr.exe" ./cmd/localui
 
   packaged-windows:
-    name: Real native Windows private unpacked ZIP; no uploads
+    name: Real native Windows unpacked ZIP; gated main-only artifact
     runs-on: windows-2025
     needs: go-tests
     timeout-minutes: 20
@@ -92,6 +96,12 @@ jobs:
           python-version: '3.12'
       - name: Install pinned schema oracle dependencies outside ZIP
         run: python -m pip install --disable-pip-version-check 'jsonschema==4.25.1' 'rfc3339-validator==0.1.4'
+      - name: Preflight G4.2 legal-source and publication negative unit tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m unittest discover -s tests/g4 -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_PREFLIGHT_LEGAL_UNIT_TESTS_FAILED' }
       - name: Fetch ONLY official llmfit 1.1.20 asset to private CI temp and verify SHA Authenticode version
         shell: pwsh
         run: |
@@ -125,6 +135,27 @@ jobs:
           ('G4_OFFICIAL_ARCHIVE=' + $archive) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           ('G4_VERIFIED_LLMFIT_EXE=' + $exe) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host 'G4_1_OFFICIAL_SOURCE=PASS VERSION=1.1.20 AUTHENTICODE=Valid ARCHIVE_BYTES=6878103'
+      - name: Checkout tagged upstream llmfit source for read-only Windows CLI audit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: AlexsJones/llmfit
+          ref: bb5771394e88e352c266f4bf8bdb7a5295a998a8
+          path: llmfit-audit-source
+          persist-credentials: false
+      - name: Reconstruct Windows CLI Rust normal/build dependency graph, npm production scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $audit = Join-Path $env:RUNNER_TEMP 'g4.2-windows-cli-source-audit.json'
+          python tests/g4/audit_llmfit_windows_cli.py --upstream llmfit-audit-source --output $audit --inventory packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt --license-bundle packaging/licenses/rust-cli-source-license-texts.txt
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_TARGET_CLI_AUDIT_FAILED' }
+          ('G4_LLMFIT_TARGET_AUDIT=' + $audit) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Audit source-license completeness and verify corresponding MPL source over HTTPS SHA-256
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests/g4/legal_compliance.py --audit-report $env:G4_LLMFIT_TARGET_AUDIT
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_MANDATORY_LICENSE_COMPLIANCE_FAIL' }
       - name: Build standalone Win x64 Neurometr.exe in private runner temp
         shell: pwsh
         run: |
@@ -180,9 +211,88 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python tests/g4/smoke.py $env:G4_UNPACKED_PRIVATE $env:G4_PRIVATE_ZIP $env:G4_VERIFIED_LLMFIT_EXE
           if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_WINDOWS_SMOKE_FAILED' }
-      - name: Remove internal ZIP and EXE from ephemeral runner (no upload)
+      - name: Validate main-only redistribution gate rules (negative and hypothetical positive tests)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m unittest discover -s tests/g4 -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_GATE_UNIT_TESTS_FAILED' }
+      - name: Prepare SHA256SUMS and validate two-file download payload (still private)
+        id: delivery
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sha = $env:G4_VERIFIED_CHECKOUT_COMMIT
+          if ($sha -cne $env:G4_EXPECTED_SOURCE_COMMIT -or $sha -notmatch '^[a-f0-9]{40}$') { throw 'G4_2_SOURCE_PROVENANCE_MISMATCH' }
+          $dir = Join-Path $env:RUNNER_TEMP 'G4 verified download payload - private until approved'
+          New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null
+          $filename = 'Neurometr-Windows-x64-' + $sha + '.zip'
+          $copy = Join-Path $dir $filename
+          Copy-Item -LiteralPath $env:G4_PRIVATE_ZIP -Destination $copy -ErrorAction Stop
+          $digest = (Get-FileHash -Algorithm SHA256 -LiteralPath $copy).Hash.ToLowerInvariant()
+          $length = (Get-Item -LiteralPath $copy).Length
+          $line = $digest + ' *' + $filename + "`n"
+          [System.IO.File]::WriteAllText((Join-Path $dir 'SHA256SUMS.txt'),$line,[System.Text.UTF8Encoding]::new($false))
+          python tests/g4/check_download_payload.py --dir $dir --commit $sha --public
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_DOWNLOAD_PAYLOAD_INTEGRITY_FAILED' }
+          ('folder=' + $dir) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          ('commit=' + $sha) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          ('zip_sha256=' + $digest) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          ('zip_size=' + $length) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host ('G4_2_CHECKSUM_SIDECAR=PASS BYTES=' + $length + ' SHA256=' + $digest)
+      - name: Fail-closed license and distribution approval check
+        id: license_gate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests/g4/publication_gate.py --policy packaging/public_artifact_gate.json --rust-audit-report $env:G4_LLMFIT_TARGET_AUDIT --output $env:GITHUB_OUTPUT
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_PUBLICATION_GATE_ERROR' }
+      - name: Validate user-facing redistribution labels only if license audit is approved
+        if: steps.license_gate.outputs.approved == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          python tests/g4/check_download_payload.py --dir '${{ steps.delivery.outputs.folder }}' --commit '${{ steps.delivery.outputs.commit }}' --public
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_USER_DISTRIBUTION_METADATA_NOT_READY' }
+      - name: Upload verified ZIP and SHA256SUMS (main only, after all tests and licensing)
+        id: published
+        if: success() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && steps.license_gate.outputs.approved == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: neurometr-windows-x64-${{ steps.delivery.outputs.commit }}
+          path: ${{ steps.delivery.outputs.folder }}
+          if-no-files-found: error
+          include-hidden-files: false
+          overwrite: false
+          compression-level: 0
+          retention-days: 14
+      - name: Write downloadable ZIP metadata and gated publication status to Actions Summary
+        if: success()
+        shell: pwsh
+        run: |
+          $lines = @(
+            '## Нейрометр Windows x64 — проверенная CI-сборка'
+            '',
+            ('- Source commit: `${{ steps.delivery.outputs.commit }}`'),
+            ('- ZIP: `Neurometr-Windows-x64-${{ steps.delivery.outputs.commit }}.zip`'),
+            ('- ZIP size: **${{ steps.delivery.outputs.zip_size }} bytes**'),
+            ('- Application ZIP SHA-256: `${{ steps.delivery.outputs.zip_sha256 }}`'),
+            '- llmfit: **v1.1.20**, fixed official archive SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`',
+            '- Windows unpacked smoke: **PASS**; Go/Python validators, history and ZIP negatives: **PASS**',
+             '- LEGAL_COMPLIANCE: **${{ steps.license_gate.outputs.legal_compliance }}**; BINARY_PROVENANCE: **NOT_VERIFIED** (no attested binary SBOM)',
+             '- OWNER_RISK_ACCEPTANCE: **${{ steps.license_gate.outputs.owner_risk_acceptance }}** (test artifacts only)',
+            '- SHA256SUMS.txt is the checksum for the inner application ZIP, not the outer GitHub Actions artifact container.'
+          )
+          if ('${{ steps.published.outputs.artifact-url }}' -ne '') {
+            $lines += ('- Downloadable artifact: [neurometr-windows-x64-${{ steps.delivery.outputs.commit }}](${{ steps.published.outputs.artifact-url }})')
+          } else {
+            $lines += '- Downloadable artifact: **BLOCKED** (legal evidence incomplete, CI failure or PR/non-main run)'
+            $lines += ('- License gate: `${{ steps.license_gate.outputs.reason }}`')
+          }
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($lines -join "`n") -Encoding utf8
+      - name: Remove private ZIP and staged payload from ephemeral Windows runner
         if: always()
         shell: pwsh
         run: |
           Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Filter 'neurometr-g4.1-internal-*.zip' -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-          Write-Host 'G4_1_PRIVATE_ZIP_CLEANUP=PASS NO_ARTIFACT_UPLOAD'
+          Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Filter 'G4 verified download payload - private until approved' -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host 'G4_2_EPHEMERAL_CLEANUP=PASS'

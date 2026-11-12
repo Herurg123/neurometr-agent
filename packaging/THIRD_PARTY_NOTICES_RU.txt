@@ -1,37 +1,97 @@
-НЕЙРОМЕТР — сведения о компонентах внутреннего комплекта G4.1
+НЕЙРОМЕТР — СТОРОННИЕ ЛИЦЕНЗИИ, COPYRIGHT И АТРИБУЦИИ
+Тестовый Windows x64 комплект G4.2, не GitHub Release.
+Этот документ дополняет, но не заменяет полные тексты в LICENSES/.
 
-Это внутренний CI-комплект для технической проверки. Он не является публичным
-релизом и не разрешён к распространению.
+1. ОФИЦИАЛЬНЫЙ llmfit CLI v1.1.20
+MIT; Copyright (c) 2026 Alex Jones. Полный текст: LICENSES/llmfit-MIT.txt.
+Источник: https://github.com/AlexsJones/llmfit/tree/v1.1.20
+Проверяемый официальный Windows ZIP SHA-256:
+1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489
 
-1. llmfit CLI v1.1.20
-   Источник: https://github.com/AlexsJones/llmfit/tree/v1.1.20
-   Лицензия основного проекта: MIT
-   Полный текст: LICENSES/llmfit-MIT.txt
-   Официальный Windows x64 ZIP: SHA-256
-   1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489
-   Наличие исполняемого файла не означает проверки CPU/GPU модели, backend или TPS.
+По pinned llmfit source/Cargo.lock для Windows CLI реконструированы 215
+Rust package/version (normal/build, включая сборочные crates). Их оригинальные
+LICENSE/NOTICE/COPYRIGHT/другие стандартно именованные уведомления, где
+имеются, сохранены вместе с именем, версией, SPDX и SHA-256 каждого файла:
+LICENSES/rust-cli-source-license-texts.txt.
+Полный перечень и границы: LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt и
+LLMFIT_WINDOWS_CLI_AUDIT_RU.txt. Это SOURCE RECONSTRUCTION, не binary SBOM.
 
-2. github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
-   Источник: https://github.com/santhosh-tekuri/jsonschema/tree/v6.0.3
-   Лицензия: Apache License 2.0
-   Полный текст: LICENSES/jsonschema-Apache-2.0.txt
+2. MPL-2.0 — ОБЯЗАТЕЛЬНЫЕ ИСХОДНИКИ ПО §3.2
+colored 3.1.1, Copyright исходного проекта: Thomas Wickham и участники.
+Исходники ТОЧНОЙ версии (получение бесплатно):
+https://static.crates.io/crates/colored/colored-3.1.1.crate
+SHA-256 архива .crate:
+faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34
+Читаемый upstream: https://github.com/colored-rs/colored/tree/v3.1.1
 
-3. golang.org/x/text v0.14.0
-   Источник: https://github.com/golang/text/tree/v0.14.0
-   Лицензия: BSD-3-Clause
-   Полный текст: LICENSES/golang-x-text-BSD-3-Clause.txt
+option-ext 0.2.0, автор Simon Ochsenreither и участники.
+Исходники ТОЧНОЙ версии (получение бесплатно):
+https://static.crates.io/crates/option-ext/option-ext-0.2.0.crate
+SHA-256 архива .crate:
+04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d
+Читаемый upstream: https://github.com/soc/option-ext
 
-4. Go standard library/runtime (сборка версии Go 1.23.12)
-   Источник: https://github.com/golang/go/tree/go1.23.12
-   Лицензия: BSD-3-Clause
-   Полный текст: LICENSES/go-toolchain-BSD-3-Clause.txt
+Исходники этих компонентов предоставляются под Mozilla Public License
+Version 2.0, с сохранением прав получателя на исходный MPL-код.
+Текст MPL-2.0 включён в LICENSES/rust-cli-source-license-texts.txt;
+официальный текст: https://www.mozilla.org/en-US/MPL/2.0/.
+Согласно MPL-2.0 §3.1 и §3.2 получатель вправе получить исходную форму
+MPL-компонентов, в том числе для встроенного в EXE кода. Нейрометр не
+заявляет собственных изменений исходников colored/option-ext.
+В CI ссылки проверяются по фактическому HTTPS-скачиванию и pinned SHA-256.
 
-НЕЗАКРЫТЫЕ ВОПРОСЫ ПЕРЕД ВЫПУСКОМ:
-- Лицензия собственного кода neurometr-agent не утверждена владельцем;
-  назначать её в G4.1 запрещено. Это блокер публичной поставки.
-- Не проведён полный независимый аудит транзитивных Rust-зависимостей,
-  входящих в официальный собранный llmfit.exe, и связанных notices.
-- Правовой статус перераспространения контрактов, каталога и всех сторонних
-  материалов должен быть проверен перед публичным выпуском.
-- Release manifest фиксирует инвентаризацию, но не является подписью
-  издателя или заменой доверенной подписи remote catalog.
+3. rmcp / rmcp-macros 3.5.1 — СОЧЕТАНИЕ MIT И APACHE-2.0
+Полный переходный upstream LICENSE: LICENSES/rmcp-3.5.1-upstream-LICENSE.txt.
+Источник https://github.com/modelcontextprotocol/rust-sdk/tree/79437f291b2c44053d00dcd5db969fd0cca7c887
+Новые вклады и вклады с согласием на relicensing — Apache-2.0; прежние
+MIT-вклады без согласия правообладателей продолжают подчиняться MIT.
+Сохранены ОБА текста, MIT copyright 2024–2025 Model Context Protocol a
+Series of LF Projects, LLC и Apache-2.0. Обычная передача неизменённого
+компонента не требует перелицензирования прежних MIT-вкладов.
+Условие CC-BY-4.0 относится к документации upstream (кроме спецификаций),
+не является лицензией скомпилированного Rust-кода. Документация upstream
+не перепубликуется как отдельный объект в комплекте.
+
+4. ПРОЧИЕ ВАЖНЫЕ RUST-ЛИЦЕНЗИИ
+clipboard-win 5.4.1: BSL-1.0, полный upstream-текст
+LICENSES/clipboard-win-BSL-1.0.txt, источник
+https://github.com/DoumanAsh/clipboard-win/tree/3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342
+(llmfit и llmfit-core: MIT в LICENSES/llmfit-MIT.txt).
+Составные обязательства сохраняются вместе с оригинальными файлами:
+ring 0.17.14 — Apache-2.0 AND ISC (включая BoringSSL/other-bits);
+matchit 0.8.4 — MIT AND BSD-3-Clause;
+unicode-ident 1.0.24 — (MIT OR Apache-2.0) AND Unicode-3.0.
+Среди прочих SPDX встречаются MPL-2.0, Zlib, ISC, 0BSD, BSL-1.0,
+Unlicense, CDLA-Permissive-2.0. Соответствующие текстовые уведомления
+перенесены из pinned source crates, включая оригинальные copyright/NOTICE.
+
+5. ВЕРОЯТНО ВСТРОЕННЫЕ JS-РЕСУРСЫ llmfit-web
+Из pinned npm production lockfile: react 18.3.1, react-dom 18.3.1,
+scheduler 0.23.2 — MIT; copyright (c) Facebook, Inc. and its affiliates,
+LICENSES/react-family-MIT.txt.
+js-tokens 4.0.0 — MIT, copyright (c) 2014–2018 Simon Lydell,
+LICENSES/js-tokens-MIT.txt.
+loose-envify 1.4.0 — MIT, copyright (c) 2015 Andres Suarez,
+LICENSES/loose-envify-MIT.txt.
+Точный фактический состав web-assets подписанного EXE НЕ аттестован.
+
+6. ПРОЧИЕ КОМПОНЕНТЫ И ДАННЫЕ AGENT
+github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 — Apache-2.0:
+LICENSES/jsonschema-Apache-2.0.txt,
+https://github.com/santhosh-tekuri/jsonschema/tree/v6.0.3
+golang.org/x/text v0.14.0 — BSD-3-Clause:
+LICENSES/golang-x-text-BSD-3-Clause.txt.
+Go standard library/runtime 1.23.12 — BSD-3-Clause:
+LICENSES/go-toolchain-BSD-3-Clause.txt.
+Проектный каталог/контракты, атрибуции Qwen без весов:
+DATA_SOURCE_ATTRIBUTION_RU.txt.
+
+7. ГРАНИЦЫ ДОКАЗАТЕЛЬНОСТИ
+SOURCE RECONSTRUCTION подтверждается Cargo.lock, upstream source и CI.
+BINARY_PROVENANCE = NOT_VERIFIED: независимого подтверждения Rust graph,
+фактических features и встроенного JS именно подписанного EXE нет.
+Владелец принял этот риск исключительно для тестовых Actions artifacts:
+G4_2_OWNER_RISK_ACCEPTANCE_RU.txt. Это не освобождает от лицензий.
+Права получателей сторонних OSS-компонентов не ограничиваются условиями
+закрытой части Agent (DISTRIBUTION_TERMS_RU.txt).
+release-manifest.json содержит SHA-256, но не является подписью издателя.

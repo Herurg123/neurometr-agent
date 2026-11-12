@@ -8,3 +8,8 @@ go.sum text eol=lf
 
 # A3.3: offline catalog bytes MUST match the approved Web snapshot on Windows.
 bundled/** text eol=lf
+
+# G4.2: verbatim pinned upstream LICENSE blobs for legal SHA verification.
+# Git for Windows must not rewrite line endings in these two source notices.
+packaging/licenses/clipboard-win-BSL-1.0.txt text eol=lf
+packaging/licenses/rmcp-3.5.1-upstream-LICENSE.txt text eol=lf

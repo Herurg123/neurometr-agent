@@ -1,0 +1,67 @@
+НЕЙРОМЕТР — ЛИЦЕНЗИОННЫЙ И SOURCE AUDIT llmfit v1.1.20, Windows x64 CLI
+12.11.2026; G4.2. Только тестовые Windows x64 Actions artifacts.
+Pinned upstream: https://github.com/AlexsJones/llmfit/tree/v1.1.20
+Upstream commit: bb5771394e88e352c266f4bf8bdb7a5295a998a8.
+Cargo target: x86_64-pc-windows-msvc; package llmfit (llmfit-tui/Cargo.toml),
+default features; normal + build edges, включая build tools и proc macros,
+без dev, optional async-nats и Desktop. Исходный workspace Cargo.lock:
+659 записей; целевой source closure: 215 package/version.
+Официальный Windows ZIP llmfit (6 878 103 байта) SHA-256:
+1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489.
+CI проверяет фактический SHA, размер, Authenticode Valid и llmfit 1.1.20.
+
+A. ЮРИДИЧЕСКИЕ ОБЯЗАТЕЛЬСТВА ПРИ ПЕРЕДАЧЕ БИНАРНИКА:
+- Соблюдение MIT/Apache-2.0/BSL-1.0/BSD/ISC/Zlib/Unlicense/Unicode-3.0,
+  CDLA-Permissive-2.0 и остальных применимых условий, включая copyright
+  и NOTICE: оригинальные лицензии/уведомления из каждого crate с файлами
+  собираются в LICENSES/rust-cli-source-license-texts.txt по pinned source.
+  В bundle сохраняются name/version/SPDX, имя и SHA-256 оригинала.
+- Пять crate-пакетов без стандартно именованных файлов LICENSE/NOTICE:
+  clipboard-win@5.4.1; llmfit@1.1.20; llmfit-core@1.1.20;
+  rmcp@3.5.1; rmcp-macros@3.5.1. Отсутствие такого filename
+  НЕ доказывает отсутствия лицензии. Покрытие конкретными upstream LICENSE:
+  clipboard-win-BSL-1.0.txt (commit
+  3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342),
+  llmfit-MIT.txt (pinned llmfit root LICENSE),
+  rmcp-3.5.1-upstream-LICENSE.txt (tag rmcp-v3.5.1, commit
+  79437f291b2c44053d00dcd5db969fd0cca7c887).
+  Обязательные MIT/Apache уведомления rmcp сосуществуют: прежние MIT-вклады
+  не требуют перелицензирования, а совместные тексты сохраняются.
+- MPL-2.0 §3.2 для colored@3.1.1 и option-ext@0.2.0 требует доступной
+  соответствующей Source Code Form и информирования получателя.
+  Точные HTTPS URL .crate, версии и SHA-256 включены в
+  THIRD_PARTY_NOTICES_RU.txt; CI скачивает и сверяет их с lockfile.
+  Полный MPL-текст хранится в source LICENSE bundle.
+- Составные SPDX: ring (Apache-2.0 AND ISC), matchit (MIT AND BSD-3-Clause),
+  unicode-ident ((MIT OR Apache-2.0) AND Unicode-3.0) проверяются особо.
+  Скрипт дополнительно проверяет наличие исходных LICENSE/NOTICE,
+  source SHA и сведения npm. Упоминания неназванных copyright в source
+  не заменяют полный точный binary provenance.
+- Закреплённый upstream npm production lockfile содержит пять MIT packages:
+  react, react-dom, scheduler, js-tokens, loose-envify; точные версии,
+  тексты MIT и copyright в THIRD_PARTY_NOTICES_RU.txt и LICENSES/.
+  Это scope источников, НЕ доказанный состав встроенного JS.
+
+B. НЕЗАВИСИМАЯ АТТЕСТАЦИЯ ОФИЦИАЛЬНОГО EXE:
+BINARY_PROVENANCE = NOT_VERIFIED. Подпись Authenticode подтверждает
+действительную подпись проверяемого PE, но не устанавливает точный исходный
+Rust compiled graph, активные features, исходный commit или web/dist.
+Проверка Cargo tree / cargo metadata с locked dependencies и source LICENSE
+составляет RECONSTRUCTED SOURCE INVENTORY, НЕ подтверждённый binary SBOM.
+В проверенных сторонних текстах лицензий не установлено обязательства
+получать независимую аттестацию конкретного подписанного EXE.
+OWNER_RISK_ACCEPTANCE = APPROVED только для QA Actions artifacts:
+G4_2_OWNER_RISK_ACCEPTANCE_RU.txt.
+Отдельная независимая аттестация могла бы повысить supply-chain assurance,
+но она НЕ подменяется строкой PASS и НЕ требуется как самостоятельный
+юридический критерий после принятого владельцем риска.
+
+C. CI ГРАНИЦЫ И РЕЗУЛЬТАТ:
+tests/g4/audit_llmfit_windows_cli.py пересчитывает Cargo graph по
+закреплённому llmfit HEAD, валидирует целевой inventory и собирает
+оригинальные source notices. tests/g4/legal_compliance.py проверяет
+обязательные уведомления/добавочные upstream LICENSE и доступность MPL
+source по HTTPS/SHA и фиксирует LEGAL_COMPLIANCE=PASS либо FAIL.
+Если проверка не пройдена, публикация BLOCKED; PR и feature-ветки не
+публикуют ZIP независимо от результатов лицензирования.
+Этот файл описывает механизм, а не сертификат происхождения EXE.
