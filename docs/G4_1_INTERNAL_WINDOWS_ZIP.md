@@ -73,4 +73,18 @@ Neurometr-Windows-x64/
 
 Нет пользовательского ZIP/GitHub release/deploy. Не выполняются G4.2 или тесты на ПК владельца. Не проверены фактический GPU/SYCL inference, NPU, TPS, модельные веса, сеть пользователя, SmartScreen на ПК владельца. История не зашифрована; стандартные loopback/ACL ограничения A3.4 сохраняются. Упаковка и ZIP manifest не являются подписью издателя.
 
-**Финальный SHA PR, список checksum, Windows CI и независимые PASS фиксируются после завершения проверок. Без отдельного решения владельца PR остаётся Draft, merge/release/artifacts запрещены.**
+## Контрольная точка внутренней сборки G4.1
+
+[GitHub Actions #43243043079](https://github.com/Herurg123/neurometr-agent/actions/runs/43243043079), реализация packaging/smoke на кодовом HEAD `96685fe8eb3cbcc61e5d6708bea4a8cfcbc68d9d`: **3/3 PASS**.
+
+- Ubuntu 24.04 и Windows 2025 x64: по **218 PASS, 0 FAIL, 2 ожидаемых SKIP** live-only; `go vet`, F01–F08, проверка canonical 23-файлового pin и bundled-каталога PASS.
+- Официальный llmfit: `6 878 103` байта, SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`, `Authenticode=Valid`, `--version=llmfit 1.1.20`.
+- Дважды собранный внутренний ZIP с **34 инвентаризованными файлами** оказался байтово одинаковым: **12 843 925 байт**, SHA-256 `7071f094f5d321fe3d38b832176b3794f4297a7447b3859a24784a7529676d79` для указанного source HEAD. Истинная длина/хэш ZIP зависит от исходного commit в release-manifest; повторная сборка на другом commit создаст другую контрольную сумму.
+- Распакованный в путь с пробелами ZIP прошёл `contractcheck`, `catalogcheck`, проверку manifest и хешей, самостоятельный Windows localhost без `-root` и SDK в `PATH`; полный Go/Python validator для обычного native JSON, `catalog_ref.origin=bundled`, история после рестарта и ручной экспорт PASS. На runner создан диагностический JSON **2285 байт**, один DXGI-адаптер; это не данные ПК владельца.
+- Шесть **негативных проверок настоящего полного ZIP**: отсутствие файла, подмена содержимого, подмена manifest, `../` traversal, дубликат пути с различием регистра и ZIP symlink — все отвергнуты **до записи на диск**.
+- Быстрый маршрут продолжил работу при отсутствии и при повреждении `bin/llmfit.exe`; вызовы llmfit `system`, `fit`, `recommend` не выполнялись. `G4_1_PRIVATE_ZIP_CLEANUP=PASS NO_ARTIFACT_UPLOAD`: ни архив, ни приватный диагностический JSON не публиковались.
+
+**Правовой release-blocker остаётся:** нет утверждённой лицензии собственного Agent; полный аудит транзитивных Rust-зависимостей и юридических условий распространения отложен до решения владельца. Внутренняя техническая проверка не снимает эти блокеры.
+
+**Статус:** [Draft PR #8](https://github.com/Herurg123/neurometr-agent/pull/8). Окончательный HEAD ветки и финальный повторный CI после документов указываются в PR. Без отдельного решения владельца **merge, GitHub Release, ZIP artifacts, deployment и G4.2 запрещены**.
+
