@@ -6,8 +6,11 @@
    Полный текст LICENSES/llmfit-MIT.txt.
    Пин официального Windows ZIP:
    1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489
-   Транзитивные Rust-зависимости ещё НЕ прошли законченный audit:
-   см. LLMFIT_WINDOWS_CLI_AUDIT_RU.txt. Публичная выдача блокируется gate.
+   В том числе MPL-2.0, BSL-1.0, ISC, Zlib и составные лицензии.
+   Доступные полные исходные License/NOTICE-копии Rust crates:
+   LICENSES/rust-cli-source-license-texts.txt. Некоторые отсутствуют
+   в опубликованных crate packages: статус license audit не завершён.
+   См. LLMFIT_WINDOWS_CLI_AUDIT_RU.txt. Публичная выдача блокируется gate.
 
 2. Потенциально встроенные через llmfit-web/dist ресурсы:
    react 18.3.1, react-dom 18.3.1, scheduler 0.23.2;

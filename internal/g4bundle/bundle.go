@@ -171,6 +171,7 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
   "bundled/catalog.lock.json":"bundled/catalog.lock.json",
   "LICENSES/llmfit-MIT.txt":"packaging/licenses/llmfit-MIT.txt",
   "LICENSES/react-family-MIT.txt":"packaging/licenses/react-family-MIT.txt",
+  "LICENSES/rust-cli-source-license-texts.txt":"packaging/licenses/rust-cli-source-license-texts.txt",
   "LICENSES/js-tokens-MIT.txt":"packaging/licenses/js-tokens-MIT.txt",
   "LICENSES/loose-envify-MIT.txt":"packaging/licenses/loose-envify-MIT.txt",
   "DISTRIBUTION_TERMS_RU.txt":"packaging/DISTRIBUTION_TERMS_RU.txt",
@@ -184,7 +185,9 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
   "README_RU.txt":"packaging/README_RU.txt",
  }
  for target,source:=range sourcePaths{
-  b,err:=readRegular(filepath.Join(root,filepath.FromSlash(source)),2*1024*1024)
+  docMax:=int64(2*1024*1024)
+  if target=="LICENSES/rust-cli-source-license-texts.txt"{docMax=16*1024*1024}
+  b,err:=readRegular(filepath.Join(root,filepath.FromSlash(source)),docMax)
   if err!=nil{return nil,zero,fmt.Errorf("%w: missing pinned distribution document",ErrInvalidBundle)}
   files[target]=b
  }
@@ -287,6 +290,7 @@ func Verify(zipPath,dest string)(Manifest,error){
   "LICENSES/jsonschema-Apache-2.0.txt","LICENSES/golang-x-text-BSD-3-Clause.txt",
   "LICENSES/go-toolchain-BSD-3-Clause.txt","LICENSES/react-family-MIT.txt",
   "LICENSES/js-tokens-MIT.txt","LICENSES/loose-envify-MIT.txt",
+  "LICENSES/rust-cli-source-license-texts.txt",
   "DISTRIBUTION_TERMS_RU.txt","DATA_SOURCE_ATTRIBUTION_RU.txt",
   "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt","LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt","THIRD_PARTY_NOTICES_RU.txt","README_RU.txt"}
  for _,p:=range required{if len(files[p])==0{return zero,ErrInvalidBundle}}

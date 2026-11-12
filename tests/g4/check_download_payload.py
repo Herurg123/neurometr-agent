@@ -64,6 +64,11 @@ def verify(folder, commit, public=False):
             for filename in licenses:
                 lic = archive.read(ROOT + "LICENSES/" + filename).decode("utf-8")
                 assert "Permission is hereby granted" in lic and "Copyright" in lic, "incomplete npm license"
+            rust_text = archive.read(ROOT + "LICENSES/rust-cli-source-license-texts.txt").decode("utf-8")
+            assert "BEGIN_LICENSE_TEXTS" in rust_text and "END_LICENSE_TEXTS" in rust_text
+            assert "colored@3.1.1" in rust_text and "option-ext@0.2.0" in rust_text
+            assert rust_text.count("ORIGINAL_FILE_SHA256: ") >= 200, "incomplete source crate licenses"
+            assert "MISSING_STANDARD_NOTICE_FILE_NAMES:" in rust_text
             assert "Qwen2.5-0.5B" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
             assert "Qwen2.5-1.5B" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
             assert b"internal-ci-only" not in archive.read(ROOT + "release-manifest.json"), "internal-only manifest leaked"

@@ -73,11 +73,76 @@ def collect(meta, tree, npm_lock):
       "status":"candidate_graph_audit_not_redistribution_clearance"
     }
 
+
+def generate_license_bundle(meta, report, output):
+    """Preserve verbatim LICENSE/NOTICE-like files from locked Cargo source caches.
+
+    This includes build-only crates conservatively. Missing vendor files stay
+    explicitly missing, not silently replaced by generic SPDX prose.
+    """
+    lookup = {(p["name"],p["version"]):p for p in meta["packages"]}
+    sections = [
+        "НЕЙРОМЕТР: оригинальные лицензионные файлы Rust crates (SOURCE RECONSTRUCTION)",
+        "Target: " + TARGET,
+        "Source commit: " + COMMIT,
+        "Scope: llmfit CLI default, cargo normal+build, target-filtered; no desktop/dev.",
+        "Это исходная инвентаризация, НЕ аттестация бинарника от издателя.",
+        "MIT и Apache-2.0 общих проектов также см. в отдельных файлах LICENSES/.",
+        "Лицензии отсутствующих исходных файлов НЕ реконструированы из SPDX.",
+        "BEGIN_LICENSE_TEXTS",
+    ]
+    missing=[]
+    count=0
+    for rec in report["rust_packages"]:
+        key=(rec["name"],rec["version"])
+        package=lookup[key]
+        directory=Path(package["manifest_path"]).parent
+        section_title=f"{rec['name']}@{rec['version']}"
+        for filename in rec["notice_files"]:
+            source=directory/filename
+            if source.is_symlink() or not source.is_file() or source.stat().st_size>2*1024*1024:
+                raise ValueError("unsafe crate notice path: "+section_title+"/"+filename)
+            data=source.read_bytes()
+            if len(data)==0:
+                raise ValueError("empty crate license file: "+section_title+"/"+filename)
+            try:
+                original=data.decode("utf-8")
+            except UnicodeDecodeError as exc:
+                raise ValueError("non UTF-8 original crate license: "+section_title+"/"+filename) from exc
+            sections.append("=== "+section_title+" / "+filename+" ===")
+            sections.append("SPDX: "+str(rec["license_spdx"] or "UNKNOWN"))
+            sections.append("SOURCE: https://crates.io/crates/"+rec["name"]+"/"+rec["version"])
+            sections.append("ORIGINAL_FILE_SHA256: "+hashlib.sha256(data).hexdigest())
+            sections.append(original)
+            count+=1
+        if not rec["notice_files"]:
+            missing.append(section_title)
+            sections.append("=== "+section_title+" / SOURCE LICENSE FILE MISSING ===")
+            sections.append("SPDX: "+str(rec["license_spdx"] or "UNKNOWN"))
+            sections.append("SOURCE: https://crates.io/crates/"+rec["name"]+"/"+rec["version"])
+            sections.append("NOTICE: no standard LICENSE/NOTICE-like file in crate directory")
+    sections.append("END_LICENSE_TEXTS")
+    sections.append("MISSING_STANDARD_NOTICE_FILE_NAMES: "+", ".join(missing))
+    raw=("\n".join(sections)+"\n").encode("utf-8")
+    if len(raw)>16*1024*1024:
+        raise ValueError("license aggregation over limit")
+    output.parent.mkdir(parents=True,exist_ok=True)
+    if output.exists():
+        raise ValueError("refusing to overwrite existing third-party license bundle")
+    output.write_bytes(raw)
+    report["rust_source_license_bundle_sha256"]=hashlib.sha256(raw).hexdigest()
+    report["rust_source_notice_file_count"]=count
+    report["rust_source_package_notice_missing"]=missing
+    print("G4_2_RUST_SOURCE_LICENSE_FILES=PASS COUNT="+str(count)+
+          " MISSING_PACKAGES="+str(len(missing))+" BYTES="+str(len(raw))+
+          " SHA256="+hashlib.sha256(raw).hexdigest())
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--upstream",required=True,type=Path)
     ap.add_argument("--output",required=True,type=Path)
     ap.add_argument("--inventory",required=True,type=Path)
+    ap.add_argument("--license-bundle",required=True,type=Path)
     opts=ap.parse_args()
     root=opts.upstream.resolve()
     if command(["git","rev-parse","HEAD"],root).strip().lower()!=COMMIT:
@@ -105,6 +170,7 @@ def main():
     if actual!=expected:
         raise ValueError("static Windows CLI package inventory drifts from locked source")
     report["checked_component_inventory"]="packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt"
+    generate_license_bundle(meta,report,opts.license_bundle)
     report["source_sha256"]={
       p:hashlib.sha256((root/p).read_bytes()).hexdigest()
       for p in ("Cargo.lock","llmfit-tui/Cargo.toml","llmfit-core/Cargo.toml",

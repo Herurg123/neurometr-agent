@@ -43,6 +43,7 @@ func makeSyntheticPackage(t *testing.T)testBundle{
   "bundled/catalog.lock.json":[]byte("{}"),
   "LICENSES/llmfit-MIT.txt":[]byte("MIT full source copy test"),
   "LICENSES/react-family-MIT.txt":[]byte("React MIT notice test"),
+  "LICENSES/rust-cli-source-license-texts.txt":[]byte("All source crate licenses synthetic fixture"),
   "LICENSES/js-tokens-MIT.txt":[]byte("js-tokens MIT notice test"),
   "LICENSES/loose-envify-MIT.txt":[]byte("loose-envify MIT notice test"),
   "DISTRIBUTION_TERMS_RU.txt":[]byte("Test distribution terms"),

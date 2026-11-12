@@ -140,7 +140,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $audit = Join-Path $env:RUNNER_TEMP 'g4.2-windows-cli-source-audit.json'
-          python tests/g4/audit_llmfit_windows_cli.py --upstream llmfit-audit-source --output $audit --inventory packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt
+          python tests/g4/audit_llmfit_windows_cli.py --upstream llmfit-audit-source --output $audit --inventory packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt --license-bundle packaging/licenses/rust-cli-source-license-texts.txt
           if ($LASTEXITCODE -ne 0) { throw 'G4_2_TARGET_CLI_AUDIT_FAILED' }
           ('G4_LLMFIT_TARGET_AUDIT=' + $audit) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Build standalone Win x64 Neurometr.exe in private runner temp
