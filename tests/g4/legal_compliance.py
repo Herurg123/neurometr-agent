@@ -183,8 +183,8 @@ def check_source_audit(root, report, license_bundle):
     expected_lines = []
     total_notices = 0
     missing = set()
-    for name in sorted(items):
-        p = items[name]
+    for p in sorted(records, key=lambda rec: (rec["name"], rec["version"])):
+        name = p["name"] + "@" + p["version"]
         expr = p.get("license_spdx")
         require(isinstance(expr, str) and len(expr) < 180, "missing SPDX: " + name)
         license_ids = set(re.findall(r"[A-Za-z][A-Za-z0-9.-]*|0BSD", expr))
