@@ -59,10 +59,21 @@ jobs:
       G4_EXPECTED_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
       CGO_ENABLED: '0'
     steps:
-      - name: Checkout approved Agent source
+      - name: Checkout exact expected Agent feature HEAD (not PR merge)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Fail closed unless git checkout SHA matches expected source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $actual = (git rev-parse HEAD).Trim().ToLowerInvariant()
+          if ($LASTEXITCODE -ne 0 -or $actual -notmatch '^[0-9a-f]{40}$' -or $actual -cne $env:G4_EXPECTED_SOURCE_COMMIT.ToLowerInvariant()) {
+            throw 'G4_1_CHECKOUT_SOURCE_SHA_MISMATCH'
+          }
+          ('G4_VERIFIED_CHECKOUT_COMMIT=' + $actual) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host ('G4_1_CHECKOUT_SHA_VERIFIED=PASS HEAD=' + $actual + ' EXPECTED=' + $env:G4_EXPECTED_SOURCE_COMMIT)
       - name: Checkout frozen Web Python oracle READ-ONLY
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -129,9 +140,9 @@ jobs:
           $exe = Join-Path $env:RUNNER_TEMP 'Neurometr.exe'
           $one = Join-Path $env:RUNNER_TEMP 'neurometr-g4.1-internal-a.zip'
           $two = Join-Path $env:RUNNER_TEMP 'neurometr-g4.1-internal-b.zip'
-          go run ./cmd/g4pack pack -root . -exe $exe -official-archive $env:G4_OFFICIAL_ARCHIVE -out $one -source-commit $env:G4_EXPECTED_SOURCE_COMMIT
+          go run ./cmd/g4pack pack -root . -exe $exe -official-archive $env:G4_OFFICIAL_ARCHIVE -out $one -source-commit $env:G4_VERIFIED_CHECKOUT_COMMIT
           if ($LASTEXITCODE -ne 0) { throw 'PRIVATE_PACK_FAILED' }
-          go run ./cmd/g4pack pack -root . -exe $exe -official-archive $env:G4_OFFICIAL_ARCHIVE -out $two -source-commit $env:G4_EXPECTED_SOURCE_COMMIT
+          go run ./cmd/g4pack pack -root . -exe $exe -official-archive $env:G4_OFFICIAL_ARCHIVE -out $two -source-commit $env:G4_VERIFIED_CHECKOUT_COMMIT
           if ($LASTEXITCODE -ne 0) { throw 'PRIVATE_SECOND_PACK_FAILED' }
           $h1 = (Get-FileHash -LiteralPath $one -Algorithm SHA256).Hash.ToLowerInvariant()
           $h2 = (Get-FileHash -LiteralPath $two -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -152,6 +163,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_CONTRACT_PIN_FAIL' }
           go run ./cmd/catalogcheck -root $dest
           if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_CATALOG_PIN_FAIL' }
+          $provenance = Get-Content -Raw -LiteralPath (Join-Path $dest 'release-manifest.json') | ConvertFrom-Json
+          if ($provenance.agent_source_commit -cne $env:G4_VERIFIED_CHECKOUT_COMMIT -or $provenance.agent_source_commit -cne $env:G4_EXPECTED_SOURCE_COMMIT) {
+            throw 'G4_1_MANIFEST_CHECKOUT_SHA_MISMATCH'
+          }
+          Write-Host ('G4_1_MANIFEST_CHECKOUT_SHA_VERIFIED=PASS SOURCE=' + $provenance.agent_source_commit)
           ('G4_UNPACKED_PRIVATE=' + $dest) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $hAgent = (Get-FileHash -LiteralPath (Join-Path $dest 'Neurometr.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
           $hCli = (Get-FileHash -LiteralPath (Join-Path $dest 'bin\llmfit.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
