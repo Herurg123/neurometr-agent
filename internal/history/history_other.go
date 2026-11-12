@@ -4,7 +4,6 @@ package history
 
 import (
  "os"
- "path/filepath"
 )
 
 func ensurePrivateDirectory(path string)error{
@@ -20,4 +19,3 @@ func moveNoReplace(src,dst string)error{
  if err:=os.Remove(src);err!=nil{return err}
  return nil
 }
-var _=filepath.Separator
