@@ -179,7 +179,9 @@ def main():
     opts.output.write_text(json.dumps(report,ensure_ascii=False,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print("G4_2_TARGET_CLI_AUDIT=PASS TARGET="+TARGET+
           " RUST_PACKAGES="+str(len(report["rust_packages"]))+" NPM_PRODUCTION=5")
-    print("G4_2_RUST_LICENSE_SCOPE=BLOCKED FULL_TEXT_BUNDLED=false SIGNED_BINARY_GRAPH_ATTESTED=false")
+    print("G4_2_RUST_SOURCE_NOTICE_COLLECTION=PASS ORIGINAL_FILES="+str(report["rust_source_notice_file_count"])+
+          " MISSING_STANDARD_FILENAMES="+str(len(report["rust_source_package_notice_missing"]))+
+          " BINARY_PROVENANCE=NOT_VERIFIED LEGAL_CLEARANCE=CHECK_SEPARATELY")
     print("G4_2_TARGET_CLI_COMPONENTS_BEGIN")
     for c in report["rust_packages"]:
         print(c["name"]+"@"+c["version"]+" | "+str(c["license_spdx"] or "UNKNOWN")+
