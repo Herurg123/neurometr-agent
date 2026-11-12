@@ -46,4 +46,16 @@
 4. `NPU` не опрашивается, свободная VRAM и реальная работа GPU runtime не измеряются. Cloud checks, llmfit system/fit и model benchmarks не запускаются. Не создавать оценок TPS из каталога.
 5. Хранилище не зашифровано. Нет автоматического удаления, миграции между пользователями и синхронизации. Просмотр файлов с будущими неподдерживаемыми версиями заканчивается контролируемым отказом.
 
-**Статус:** Draft PR, только Agent. CI evidence и SHA фиксируются после реальных проверок. Merge, release, deployment, готовый пользовательский ZIP и переход к следующему этапу требуют отдельного разрешения.
+## 7. Подтверждённые результаты A3.4 CI (кодовый HEAD `21155ed5cb79016be61c057e3f60bfea19f8a66a`)
+
+[GitHub Actions #43217040609](https://github.com/Herurg123/neurometr-agent/actions/runs/43217040609): **3/3 PASS**. Ubuntu 24.04: **207 PASS**, 0 FAIL и 2 ожидаемых SKIP live-only llmfit. Windows 2025 x64: **207 PASS**, 0 FAIL и 2 ожидаемых SKIP. Прошли `go vet`, Windows x64 build, pin-копия 23 канонических файлов и доверенный bundled-каталог.
+
+Реальный Windows hosted smoke: `A3_4_EXTERNAL_INTERFACE=DENIED`, `A3_4_HOST_ORIGIN_CSRF_CORS_GET=DENIED`, `A3_4_NATIVE_WINDOWS=PASS`, `FULL_GO_VALIDATOR=PASS`, `WEB_PYTHON=PASS`, `BUNDLED_REF=PASS`, `NO_LLMFIT=PASS`, `PII=PASS`.
+
+Проверки хранения и UX: `A3_4_WINDOWS_ACL_AUDIT=PASS DIRECTORY_AND_REPORT=PRIVATE` (независимый `icacls` помимо встроенного Win32 DACL gate); `A3_4_BROWSER_SMOKE=PASS` на установленном Edge в headless-режиме без screenshots/video/traces; `A3_4_HISTORY_RESTART=PASS`, `CORRUPT_ISOLATION=PASS`, `UNSUPPORTED_VERSION=REJECTED`, `OVERSIZE=REJECTED`. Отчёт: **2285 байт**, один DXGI-адаптер; это результат **виртуального GitHub-hosted Windows runner**.
+
+Отдельная Go UI-регрессия `A3_4_UI_PARTIAL=PASS`: при синтетическом отказе GPU сохраняются CPU/RAM, `overall_status=partial`, структурированная ошибка и полный валидированный JSON, доступный через HTTP-историю. Реальный GPU backend не запускался.
+
+CI не сохраняет и не публикует исходный JSON, HTML dump, токены, аппаратные модели или SID; вывод ограничен результатами тестов, размером и количеством GPU. На реальном компьютере владельца UI/ACL/драйверы ещё не испытаны.
+
+**Статус:** работа A3.4 остаётся Draft PR #7; CI подтверждает тестовый cloud runner, не merge и не публичный выпуск. Merge, release, deployment, пользовательский ZIP и следующий этап требуют отдельного решения.
