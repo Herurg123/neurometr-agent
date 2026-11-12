@@ -96,9 +96,9 @@ def main():
         raise ValueError("upstream embed recipe changed")
     report=collect(meta,tree,npm)
     static=opts.inventory.read_text(encoding="utf-8")
-    if static.count("BEGIN_COMPONENTS\\n") != 1 or static.count("\\nEND_COMPONENTS") != 1:
+    if static.count("BEGIN_COMPONENTS\n") != 1 or static.count("\nEND_COMPONENTS") != 1:
         raise ValueError("static component inventory format invalid")
-    actual=static.split("BEGIN_COMPONENTS\\n",1)[1].split("\\nEND_COMPONENTS",1)[0].splitlines()
+    actual=static.split("BEGIN_COMPONENTS\n",1)[1].split("\nEND_COMPONENTS",1)[0].splitlines()
     expected=[c["name"]+"@"+c["version"]+" | "+str(c["license_spdx"] or "UNKNOWN")+
               " | notices="+(",".join(c["notice_files"]) or "MISSING")
               for c in report["rust_packages"]]
