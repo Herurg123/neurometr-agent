@@ -77,3 +77,6 @@
 
 
 **Упаковка исходных Rust notices:** в Windows CI по подтверждённому Cargo.lock извлекаются оригинальные LICENSE/NOTICE-like файлы из source crate archives и детерминированно объединяются с названиями/version/SPDX и SHA каждого исходного файла в `LICENSES/rust-cli-source-license-texts.txt`. Файл добавляется в ZIP и его SHA фиксируется в package manifest. Это сокращает объём недостающих лицензионных текстов, но не легализует недостающие crate notices автоматически: `clipboard-win`, `rmcp`, `rmcp-macros` не содержат найденных стандартных notice-файлов; у llmfit/core действует отдельный upstream MIT. `public_artifact_gate` остаётся `blocked`, пока не подтверждены все обязательства и точная связь с официальным EXE.
+
+
+**Исправление Apache-2.0:** историческая upstream копия лицензии `jsonschema` обрывалась в конце Section 9. В G4.2 заменена полным стандартным текстом Apache Software Foundation (включая END OF TERMS и APPENDIX) из официального Apache-репозитория. ZIP smoke требует маркеры полной лицензии. Для Qwen 0.5B/1.5B добавлено copyright `Alibaba Cloud (2024)` из их LICENSE, веса моделей отсутствуют.

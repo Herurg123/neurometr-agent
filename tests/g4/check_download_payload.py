@@ -69,6 +69,9 @@ def verify(folder, commit, public=False):
             assert "colored@3.1.1" in rust_text and "option-ext@0.2.0" in rust_text
             assert rust_text.count("ORIGINAL_FILE_SHA256: ") >= 200, "incomplete source crate licenses"
             assert "MISSING_STANDARD_NOTICE_FILE_NAMES:" in rust_text
+            apache = archive.read(ROOT + "LICENSES/jsonschema-Apache-2.0.txt").decode("utf-8")
+            assert "END OF TERMS AND CONDITIONS" in apache and "APPENDIX: How to apply" in apache, "Apache-2.0 legal text incomplete"
+            assert "Copyright 2024 Alibaba Cloud" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
             assert "Qwen2.5-0.5B" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
             assert "Qwen2.5-1.5B" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
             assert b"internal-ci-only" not in archive.read(ROOT + "release-manifest.json"), "internal-only manifest leaked"

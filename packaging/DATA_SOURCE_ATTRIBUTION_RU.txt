@@ -15,6 +15,8 @@ Herurg123/neurometr-web, commit bb828bb09372e16cf63d04371d5f9367eee2526e.
   https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
 
 Соответствующие upstream репозитории моделей указывают Apache License 2.0.
+Указание правообладателя в LICENSE Qwen: Copyright 2024 Alibaba Cloud.
+Это атрибуция источника модели, а не передача прав Нейрометру.
 Полный текст Apache-2.0 (уже входящий в комплект):
 LICENSES/jsonschema-Apache-2.0.txt.
 Приведённая ссылка на лицензию не означает, что веса входят в ZIP или что

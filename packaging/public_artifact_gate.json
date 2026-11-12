@@ -18,7 +18,7 @@
     "rust_windows_cli_sbom_sha256": null,
     "rust_complete_license_notices_sha256": null,
     "npm_embedded_asset_inventory_sha256": null,
-    "audit_blocker": "215 target-scoped Rust normal/build packages reconstructed, but complete per-crate license/copyright/NOTICE texts and official signed EXE embedded Rust/npm attestation are still unverified. Missing standard notice file names: clipboard-win@5.4.1, llmfit@1.1.20, llmfit-core@1.1.20, rmcp@3.5.1, rmcp-macros@3.5.1.",
+    "audit_blocker": "215 normal/build target-scoped crates; 366 original source LICENSE/NOTICE files bundled, but five packages have no conventional LICENSE/NOTICE path (llmfit/core covered by own root MIT; outstanding clipboard-win@5.4.1 BSL-1.0 and rmcp/rmcp-macros@3.5.1 Apache-2.0 lineage); copyright coverage and exact signed official EXE Rust/embedded npm correspondence not independently attested.",
     "rust_lockfile_workspace_entries": 659,
     "rust_windows_cli_candidate_count": 215,
     "rust_windows_cli_inventory_ref": "packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt"

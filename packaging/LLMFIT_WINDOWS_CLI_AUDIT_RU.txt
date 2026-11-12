@@ -67,3 +67,8 @@ SPDX, source URL и SHA256 каждого файла. Это НЕ замена �
 rmcp@3.5.1, rmcp-macros@3.5.1 и корневых llmfit/llmfit-core (для последних
 основная MIT отдельно включена). Проверка copyright в неименованных файлах
 и точной сборочной аттестации официального EXE остаётся открытой.
+
+ПОЛНОТА APACHE 2.0: G4.2 заменяет ранее усечённую лицензию jsonschema
+стандартным полным текстом Apache Software Foundation, с END OF TERMS и
+APPENDIX: LICENSES/jsonschema-Apache-2.0.txt. Это не подтверждает
+автоматически требования для rmcp@3.5.1 или переходные notices upstream.
