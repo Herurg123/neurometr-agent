@@ -177,6 +177,7 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
   "LICENSES/js-tokens-MIT.txt":"packaging/licenses/js-tokens-MIT.txt",
   "LICENSES/loose-envify-MIT.txt":"packaging/licenses/loose-envify-MIT.txt",
   "DISTRIBUTION_TERMS_RU.txt":"packaging/DISTRIBUTION_TERMS_RU.txt",
+  "G4_2_OWNER_RISK_ACCEPTANCE_RU.txt":"packaging/G4_2_OWNER_RISK_ACCEPTANCE_RU.txt",
   "DATA_SOURCE_ATTRIBUTION_RU.txt":"packaging/DATA_SOURCE_ATTRIBUTION_RU.txt",
   "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt":"packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt",
   "LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt":"packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt",

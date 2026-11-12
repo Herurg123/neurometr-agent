@@ -49,6 +49,7 @@ func makeSyntheticPackage(t *testing.T)testBundle{
   "LICENSES/js-tokens-MIT.txt":[]byte("js-tokens MIT notice test"),
   "LICENSES/loose-envify-MIT.txt":[]byte("loose-envify MIT notice test"),
   "DISTRIBUTION_TERMS_RU.txt":[]byte("Test distribution terms"),
+  "G4_2_OWNER_RISK_ACCEPTANCE_RU.txt":[]byte("Synthetic owner risk acceptance"),
   "DATA_SOURCE_ATTRIBUTION_RU.txt":[]byte("Catalog data attribution"),
   "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt":[]byte("Windows CLI audit limitations"),
   "LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt":[]byte("Windows CLI source inventory"),

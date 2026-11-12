@@ -53,13 +53,28 @@ def verify(folder, commit, public=False):
             assert manifest["format"] == "neurometr.g4.2.test-inventory", "unexpected test inventory format"
             assert manifest["distribution"] == "user-qa-distribution", "package still marked internal-only"
             necessary = ("README_RU.txt", "THIRD_PARTY_NOTICES_RU.txt",
-                         "DISTRIBUTION_TERMS_RU.txt", "DATA_SOURCE_ATTRIBUTION_RU.txt",
+                         "DISTRIBUTION_TERMS_RU.txt", "G4_2_OWNER_RISK_ACCEPTANCE_RU.txt",
+                         "DATA_SOURCE_ATTRIBUTION_RU.txt",
                          "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt")
             for n in (ROOT + x for x in necessary):
                 text = archive.read(n).decode("utf-8")
                 assert "не разрешён к распространению" not in text.lower()
                 assert "не для публичного распространения" not in text.lower()
                 assert "internal-ci-only" not in text.lower()
+            owner = archive.read(ROOT + "G4_2_OWNER_RISK_ACCEPTANCE_RU.txt").decode("utf-8")
+            assert "BINARY_PROVENANCE = NOT_VERIFIED" in owner, "EXE provenance falsely attested"
+            assert "OWNER_RISK_ACCEPTANCE = APPROVED" in owner, "missing owner risk acceptance"
+            notices = archive.read(ROOT + "THIRD_PARTY_NOTICES_RU.txt").decode("utf-8")
+            assert "Mozilla Public License" in notices and "§3.2" in notices, "MPL source notice missing"
+            for url, digest in (
+                ("https://static.crates.io/crates/colored/colored-3.1.1.crate",
+                 "faf9468729b8cbcea668e36183cb69d317348c2e08e994829fb56ebfdfbaac34"),
+                ("https://static.crates.io/crates/option-ext/option-ext-0.2.0.crate",
+                 "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"),
+            ):
+                assert url in notices and digest in notices, "missing pinned MPL corresponding source"
+            assert "прав" in archive.read(ROOT + "DISTRIBUTION_TERMS_RU.txt").decode("utf-8")
+            assert "rmcp" in notices and "Unicode-3.0" in notices
             licenses = ("react-family-MIT.txt", "js-tokens-MIT.txt", "loose-envify-MIT.txt")
             for filename in licenses:
                 lic = archive.read(ROOT + "LICENSES/" + filename).decode("utf-8")

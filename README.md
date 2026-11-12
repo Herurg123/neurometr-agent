@@ -13,16 +13,23 @@
 
 **Статус:** [A3.4 PR #7](https://github.com/Herurg123/neurometr-agent/pull/7) и [G4.1 PR #8](https://github.com/Herurg123/neurometr-agent/pull/8) **объединены в `main`**. В G4.1 внутренний Windows ZIP уже собран и проверен на облачном Windows runner; [CI #43260151749](https://github.com/Herurg123/neurometr-agent/actions/runs/43260151749) на merge commit `dbdd5984823be88eacc407046af12cd86e8d154f` — 3/3 PASS. Пользовательский компьютер, реальные модели и TPS не проверялись. Публичного GitHub Release нет.
 
-## Текущая ограниченная разработка G4.2
+## G4.2 — готовность к отдельному merge (Draft PR #9)
 
-**G4.2 (Draft PR, ещё не в `main`):** разрабатывается автоматическая передача проверенного Windows x64 ZIP и отдельного `SHA256SUMS.txt` через GitHub Actions **только для успешного push/ручного запуска на `main`**, с сохранением всей G4.1 проверки и 14-дневным хранением. Публичная доступность Actions artifact разрешена владельцем, но **сейчас фактическая выгрузка заблокирована** из-за незавершённого целевого аудита Rust-зависимостей и встроенных ресурсов подписанного llmfit EXE. Pull request и feature-ветки ZIP не публикуют. [Спецификация G4.2 и инструкция скачивания](docs/G4_2_ACTIONS_ARTIFACT.md).
+[Draft PR #9](https://github.com/Herurg123/neurometr-agent/pull/9) готовит выдачу тестового Windows x64 ZIP только через GitHub Actions artifacts на main после успешного CI. Merge в main, GitHub Release и коммерческая поставка НЕ разрешены. Исходники Agent не получают OSS-лицензию.
 
-- После завершения юридической проверки пользователь сможет открыть [GitHub Actions](https://github.com/Herurg123/neurometr-agent/actions/workflows/g4-1-private-zip.yml) → успешный запуск на `main` → **Artifacts** → скачать `neurometr-windows-x64-<commit>`. **Пока Summary показывает `BLOCKED`, скачиваемого ZIP нет.** GitHub оборачивает файлы в собственный ZIP; внутри должны быть ZIP Нейрометра и `SHA256SUMS.txt`.
-- SHA-256 **внутреннего ZIP приложения** сверяется в PowerShell: `Get-FileHash -Algorithm SHA256 -LiteralPath '.\Neurometr-Windows-x64-<commit>.zip'`. Он должен совпасть с `SHA256SUMS.txt` и Actions Summary. При несовпадении не запускать файл.
-- **Права и данные:** владелец разрешил только тестовый бинарный дистрибутив через Actions artifacts, не назначая OSS-лицензию исходникам. Контракты и bundled-каталог принадлежат проекту; происхождение Qwen и отсутствие весов документированы. **Остаточный блокер:** по проверенному Windows CI графу 215 normal/build Rust package/version (в том числе MPL-2.0, BSL-1.0, ISC и составные лицензии); из Cargo-lock источников теперь добавляются доступные оригинальные тексты LICENSE/NOTICE со своими SHA, а для crates без стандартных файлов добавлены BSL из upstream clipboard-win и переходная Apache/MIT-лицензия upstream rmcp; остаётся проверка copyright lineage и не подтверждено соответствие точному подписанному EXE и содержимому npm web bundle. Полный список находится в `packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt`.
+**Независимые статусы:** LEGAL_COMPLIANCE=PASS возможен только после автоматической проверки оригинальных сторонних лицензий/NOTICE и MPL source; BINARY_PROVENANCE=NOT_VERIFIED (нет независимого binary Rust SBOM/attestation встроенного JS); OWNER_RISK_ACCEPTANCE=APPROVED (владелец явно принял этот риск исключительно для тестовой сборки).
 
+- На Windows CI проверяются pinned llmfit v1.1.20, SHA-256 официального ZIP и Authenticode, 215 Rust source crates, оригинальные license/NOTICE и переходные MIT/Apache rmcp; пять npm MIT, специальные AND/Unicode, соответствующие MPL .crate по HTTPS+SHA. Аудит: packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt.
+- После Go tests/Windows smoke и двух детерминированных ZIP, manifest и catalog/contract pins, gate разрешает ZIP и SHA256SUMS.txt только на main для push/dispatch. Из PR и feature-веток artifact никогда не публикуется.
+- [Инструкция и полные ограничения G4.2](docs/G4_2_ACTIONS_ARTIFACT.md), [OSS-атрибуции и MPL-source](packaging/THIRD_PARTY_NOTICES_RU.txt), [принятие риска](packaging/G4_2_OWNER_RISK_ACCEPTANCE_RU.txt).
+- E+A, pinned llmfit, контракты, каталог, Web остаются без изменений.
 
 ## История реализации: от нового к старому
+
+### G4.2. Тестовый Actions artifact и отдельная legal-проверка
+
+- Draft PR #9: отделены обязательные third-party notices от независимой бинарной аттестации, которую владелец не требует для тестового дистрибутива. Ветка не объединена с main, публикация из PR запрещена.
+
 
 ### G4.1. Автономный Windows x64 ZIP, внутренняя CI-приёмка
 

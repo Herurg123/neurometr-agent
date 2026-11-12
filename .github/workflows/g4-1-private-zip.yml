@@ -1,4 +1,4 @@
-name: G4.2 verified Windows ZIP (publication gated by license audit)
+name: G4.2 verified Windows ZIP (legal check + accepted provenance risk)
 on:
   push:
     branches: [main]
@@ -143,6 +143,12 @@ jobs:
           python tests/g4/audit_llmfit_windows_cli.py --upstream llmfit-audit-source --output $audit --inventory packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt --license-bundle packaging/licenses/rust-cli-source-license-texts.txt
           if ($LASTEXITCODE -ne 0) { throw 'G4_2_TARGET_CLI_AUDIT_FAILED' }
           ('G4_LLMFIT_TARGET_AUDIT=' + $audit) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Audit source-license completeness and verify corresponding MPL source over HTTPS SHA-256
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests/g4/legal_compliance.py --audit-report $env:G4_LLMFIT_TARGET_AUDIT
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_MANDATORY_LICENSE_COMPLIANCE_FAIL' }
       - name: Build standalone Win x64 Neurometr.exe in private runner temp
         shell: pwsh
         run: |
@@ -202,7 +208,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m unittest discover -s tests/g4 -p 'test_publication_gate.py' -v
+          python -m unittest discover -s tests/g4 -p 'test_*.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'G4_2_GATE_UNIT_TESTS_FAILED' }
       - name: Prepare SHA256SUMS and validate two-file download payload (still private)
         id: delivery
@@ -265,12 +271,14 @@ jobs:
             ('- Application ZIP SHA-256: `${{ steps.delivery.outputs.zip_sha256 }}`'),
             '- llmfit: **v1.1.20**, fixed official archive SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`',
             '- Windows unpacked smoke: **PASS**; Go/Python validators, history and ZIP negatives: **PASS**',
+             '- LEGAL_COMPLIANCE: **${{ steps.license_gate.outputs.legal_compliance }}**; BINARY_PROVENANCE: **NOT_VERIFIED** (no attested binary SBOM)',
+             '- OWNER_RISK_ACCEPTANCE: **${{ steps.license_gate.outputs.owner_risk_acceptance }}** (test artifacts only)',
             '- SHA256SUMS.txt is the checksum for the inner application ZIP, not the outer GitHub Actions artifact container.'
           )
           if ('${{ steps.published.outputs.artifact-url }}' -ne '') {
             $lines += ('- Downloadable artifact: [neurometr-windows-x64-${{ steps.delivery.outputs.commit }}](${{ steps.published.outputs.artifact-url }})')
           } else {
-            $lines += '- Downloadable artifact: **BLOCKED** (redistribution audit incomplete or PR/non-main run)'
+            $lines += '- Downloadable artifact: **BLOCKED** (legal evidence incomplete, CI failure or PR/non-main run)'
             $lines += ('- License gate: `${{ steps.license_gate.outputs.reason }}`')
           }
           Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($lines -join "`n") -Encoding utf8
