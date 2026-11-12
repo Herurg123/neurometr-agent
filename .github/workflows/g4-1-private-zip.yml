@@ -1,0 +1,168 @@
+name: G4.1 private pinned Windows ZIP (NO PUBLIC ARTIFACTS)
+on:
+  pull_request:
+    paths:
+      - 'internal/g4bundle/**'
+      - 'cmd/g4pack/**'
+      - 'tests/g4/**'
+      - 'packaging/**'
+      - 'docs/G4_1_INTERNAL_WINDOWS_ZIP.md'
+      - 'README.md'
+      - '.github/workflows/g4-1-private-zip.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: g4-1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go-tests:
+    name: Go contracts, history, HTTP and hostile ZIP (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 17
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    steps:
+      - name: Checkout approved Agent source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Use deterministic Go 1.23.12
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version: '1.23.12'
+          cache: false
+      - name: Verify approved source contract pin
+        run: go run ./cmd/contractcheck -root .
+      - name: Verify offline catalog pin
+        run: go run ./cmd/catalogcheck -root .
+      - name: All Go unit/integration tests, canonical F01-F08 and unsafe ZIP negatives
+        run: go test -v -count=1 ./...
+      - name: Static analysis
+        run: go vet ./...
+      - name: Cross-build Windows x64 EXE with no CGO
+        if: runner.os == 'Linux'
+        shell: bash
+        run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false '-ldflags=-buildid=' -o "$RUNNER_TEMP/Neurometr.exe" ./cmd/localui
+
+  packaged-windows:
+    name: Real native Windows private unpacked ZIP; no uploads
+    runs-on: windows-2025
+    needs: go-tests
+    timeout-minutes: 20
+    env:
+      G4_EXPECTED_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      CGO_ENABLED: '0'
+    steps:
+      - name: Checkout approved Agent source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Checkout frozen Web Python oracle READ-ONLY
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Herurg123/neurometr-web
+          ref: c0b9bc9d3a0e99e69dbde5f00f722b0225255b96
+          path: reference-web
+          persist-credentials: false
+      - name: Use deterministic Go 1.23.12
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version: '1.23.12'
+          cache: false
+      - name: Use Python only for CI oracle, not bundled runtime
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install pinned schema oracle dependencies outside ZIP
+        run: python -m pip install --disable-pip-version-check 'jsonschema==4.25.1' 'rfc3339-validator==0.1.4'
+      - name: Fetch ONLY official llmfit 1.1.20 asset to private CI temp and verify SHA Authenticode version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          $expected = '1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489'
+          $url = 'https://github.com/AlexsJones/llmfit/releases/download/v1.1.20/llmfit-v1.1.20-x86_64-pc-windows-msvc.zip'
+          $archive = Join-Path $env:RUNNER_TEMP 'llmfit-v1.1.20-x86_64-pc-windows-msvc.zip'
+          Invoke-WebRequest -Uri $url -OutFile $archive -MaximumRedirection 5
+          if ((Get-Item -LiteralPath $archive).Length -ne 6878103) { throw 'OFFICIAL_ARCHIVE_LENGTH_MISMATCH' }
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'OFFICIAL_ARCHIVE_SHA256_MISMATCH' }
+          Add-Type -AssemblyName System.IO.Compression
+          $za = [System.IO.Compression.ZipFile]::OpenRead($archive)
+          try {
+            if ($za.Entries.Count -eq 0 -or $za.Entries.Count -gt 30) { throw 'UNEXPECTED_OFFICIAL_ARCHIVE_COUNT' }
+            $total = [long]0
+            foreach ($entry in $za.Entries) {
+              $n = $entry.FullName
+              if ($n.StartsWith('/') -or $n.StartsWith('\') -or $n.Contains('..') -or $n.Contains(':') -or $n.Contains('\')) { throw 'UNSAFE_OFFICIAL_ARCHIVE_ENTRY' }
+              $total += $entry.Length
+              if ($total -gt 134217728) { throw 'OVERSIZED_OFFICIAL_ARCHIVE' }
+            }
+            $binaries = @($za.Entries | Where-Object { $_.Name -ieq 'llmfit.exe' })
+            if ($binaries.Count -ne 1) { throw 'EXPECTED_ONE_OFFICIAL_EXE' }
+            $exe = Join-Path $env:RUNNER_TEMP 'g4.1-pinned-official-llmfit.exe'
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($binaries[0],$exe,$false)
+          } finally { $za.Dispose() }
+          if ((Get-AuthenticodeSignature -LiteralPath $exe).Status -ne 'Valid') { throw 'AUTHENTICODE_INVALID' }
+          $version = (& $exe --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $version -ne 'llmfit 1.1.20') { throw 'OFFICIAL_LLMFIT_VERSION_MISMATCH' }
+          ('G4_OFFICIAL_ARCHIVE=' + $archive) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          ('G4_VERIFIED_LLMFIT_EXE=' + $exe) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'G4_1_OFFICIAL_SOURCE=PASS VERSION=1.1.20 AUTHENTICODE=Valid ARCHIVE_BYTES=6878103'
+      - name: Build standalone Win x64 Neurometr.exe in private runner temp
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          go build -trimpath -buildvcs=false '-ldflags=-buildid=' -o "$env:RUNNER_TEMP\Neurometr.exe" ./cmd/localui
+          if ($LASTEXITCODE -ne 0) { throw 'G4_AGENT_COMPILE_FAILED' }
+          if ((Get-Item -LiteralPath "$env:RUNNER_TEMP\Neurometr.exe").Length -le 0) { throw 'EMPTY_EXE' }
+          Write-Host 'G4_1_STANDALONE_EXE=PASS CGO_ENABLED=0'
+      - name: Build same private ZIP twice, verify exact reproducibility and inventory
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = Join-Path $env:RUNNER_TEMP 'Neurometr.exe'
+          $one = Join-Path $env:RUNNER_TEMP 'neurometr-g4.1-internal-a.zip'
+          $two = Join-Path $env:RUNNER_TEMP 'neurometr-g4.1-internal-b.zip'
+          go run ./cmd/g4pack pack -root . -exe $exe -official-archive $env:G4_OFFICIAL_ARCHIVE -out $one -source-commit $env:G4_EXPECTED_SOURCE_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw 'PRIVATE_PACK_FAILED' }
+          go run ./cmd/g4pack pack -root . -exe $exe -official-archive $env:G4_OFFICIAL_ARCHIVE -out $two -source-commit $env:G4_EXPECTED_SOURCE_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw 'PRIVATE_SECOND_PACK_FAILED' }
+          $h1 = (Get-FileHash -LiteralPath $one -Algorithm SHA256).Hash.ToLowerInvariant()
+          $h2 = (Get-FileHash -LiteralPath $two -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($h1 -ne $h2) { throw 'NONDETERMINISTIC_ARCHIVE' }
+          $sz = (Get-Item -LiteralPath $one).Length
+          Write-Host ('G4_1_ZIP_REPRODUCIBLE=PASS BYTES=' + $sz + ' SHA256=' + $h1)
+          ('G4_PRIVATE_ZIP=' + $one) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          go run ./cmd/g4pack verify -zip $one
+          if ($LASTEXITCODE -ne 0) { throw 'ZIP_INVENTORY_FAIL' }
+      - name: Strictly verify and unpack ZIP into path with spaces
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dest = Join-Path $env:RUNNER_TEMP 'G4 unpacked offline application with spaces'
+          go run ./cmd/g4pack verify -zip $env:G4_PRIVATE_ZIP -dest $dest
+          if ($LASTEXITCODE -ne 0) { throw 'SAFE_EXTRACT_FAILED' }
+          go run ./cmd/contractcheck -root $dest
+          if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_CONTRACT_PIN_FAIL' }
+          go run ./cmd/catalogcheck -root $dest
+          if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_CATALOG_PIN_FAIL' }
+          ('G4_UNPACKED_PRIVATE=' + $dest) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host 'G4_1_EXTRACTED_CONTRACTS_AND_CATALOG=PASS'
+      - name: Real packaged Windows localhost, no SDK, native diagnostic, restart, missing CLI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tests/g4/smoke.py $env:G4_UNPACKED_PRIVATE $env:G4_PRIVATE_ZIP $env:G4_VERIFIED_LLMFIT_EXE
+          if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_WINDOWS_SMOKE_FAILED' }
+      - name: Remove internal ZIP and EXE from ephemeral runner (no upload)
+        if: always()
+        shell: pwsh
+        run: |
+          Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Filter 'neurometr-g4.1-internal-*.zip' -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+          Write-Host 'G4_1_PRIVATE_ZIP_CLEANUP=PASS NO_ARTIFACT_UPLOAD'
