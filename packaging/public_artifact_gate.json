@@ -1,0 +1,18 @@
+{
+  "schema": "neurometr.g4.2.public-artifact-gate.v1",
+  "status": "blocked",
+  "owner_authorization_for_public_ci_artifacts": "granted",
+  "agent_binary_redistribution_rights": "needs_documented_owner_decision",
+  "llmfit_v1_1_20_mit_license": "verified",
+  "llmfit_transitive_rust_licenses_and_notices": "not_audited",
+  "canonical_contract_catalog_distribution_rights": "not_audited",
+  "package_user_labeling": "internal_only_not_ready",
+  "release_manifest_is_signature": false,
+  "evidence": {
+    "approved_source_commit": "dbdd5984823be88eacc407046af12cd86e8d154f",
+    "llmfit_tag": "v1.1.20",
+    "llmfit_official_zip_sha256": "1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489",
+    "rust_lockfile_package_entries": 659,
+    "notes": "The lock contains multiple workspace targets; 659 is not the number embedded in the Windows CLI. A compiled-component SBOM and notices are needed."
+  }
+}
