@@ -19,7 +19,7 @@
 
 - После завершения юридической проверки пользователь сможет открыть [GitHub Actions](https://github.com/Herurg123/neurometr-agent/actions/workflows/g4-1-private-zip.yml) → успешный запуск на `main` → **Artifacts** → скачать `neurometr-windows-x64-<commit>`. **Пока Summary показывает `BLOCKED`, скачиваемого ZIP нет.** GitHub оборачивает файлы в собственный ZIP; внутри должны быть ZIP Нейрометра и `SHA256SUMS.txt`.
 - SHA-256 **внутреннего ZIP приложения** сверяется в PowerShell: `Get-FileHash -Algorithm SHA256 -LiteralPath '.\Neurometr-Windows-x64-<commit>.zip'`. Он должен совпасть с `SHA256SUMS.txt` и Actions Summary. При несовпадении не запускать файл.
-- **Права и данные:** владелец разрешил только тестовый бинарный дистрибутив через Actions artifacts, не назначая OSS-лицензию исходникам. Контракты и bundled-каталог принадлежат проекту; происхождение Qwen и отсутствие весов документированы. **Остаточный блокер:** target-filtered Rust transitive SBOM и полные notices подписанного llmfit EXE, включая границы встроенного npm web bundle.
+- **Права и данные:** владелец разрешил только тестовый бинарный дистрибутив через Actions artifacts, не назначая OSS-лицензию исходникам. Контракты и bundled-каталог принадлежат проекту; происхождение Qwen и отсутствие весов документированы. **Остаточный блокер:** по проверенному Windows CI графу 215 normal/build Rust package/version (в том числе MPL-2.0, BSL-1.0, ISC и составные лицензии); полный набор copyright/NOTICE для них не подтверждён, соответствие точному подписанному EXE и содержимому npm web bundle не аттестовано. Полный список находится в `packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt`.
 
 
 ## История реализации: от нового к старому

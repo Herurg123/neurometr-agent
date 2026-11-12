@@ -176,6 +176,7 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
   "DISTRIBUTION_TERMS_RU.txt":"packaging/DISTRIBUTION_TERMS_RU.txt",
   "DATA_SOURCE_ATTRIBUTION_RU.txt":"packaging/DATA_SOURCE_ATTRIBUTION_RU.txt",
   "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt":"packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt",
+  "LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt":"packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt",
   "LICENSES/jsonschema-Apache-2.0.txt":"packaging/licenses/jsonschema-Apache-2.0.txt",
   "LICENSES/golang-x-text-BSD-3-Clause.txt":"packaging/licenses/golang-x-text-BSD-3-Clause.txt",
   "LICENSES/go-toolchain-BSD-3-Clause.txt":"packaging/licenses/go-toolchain-BSD-3-Clause.txt",
@@ -287,7 +288,7 @@ func Verify(zipPath,dest string)(Manifest,error){
   "LICENSES/go-toolchain-BSD-3-Clause.txt","LICENSES/react-family-MIT.txt",
   "LICENSES/js-tokens-MIT.txt","LICENSES/loose-envify-MIT.txt",
   "DISTRIBUTION_TERMS_RU.txt","DATA_SOURCE_ATTRIBUTION_RU.txt",
-  "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt","THIRD_PARTY_NOTICES_RU.txt","README_RU.txt"}
+  "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt","LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt","THIRD_PARTY_NOTICES_RU.txt","README_RU.txt"}
  for _,p:=range required{if len(files[p])==0{return zero,ErrInvalidBundle}}
  if len(files["bundled/catalog.json"])!=catalogpin.CatalogSize||hexSHA(files["bundled/catalog.json"])!=catalogpin.CatalogSHA256{
   return zero,ErrInvalidBundle

@@ -48,6 +48,7 @@ func makeSyntheticPackage(t *testing.T)testBundle{
   "DISTRIBUTION_TERMS_RU.txt":[]byte("Test distribution terms"),
   "DATA_SOURCE_ATTRIBUTION_RU.txt":[]byte("Catalog data attribution"),
   "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt":[]byte("Windows CLI audit limitations"),
+  "LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt":[]byte("Windows CLI source inventory"),
   "LICENSES/jsonschema-Apache-2.0.txt":[]byte("Apache full source copy test"),
   "LICENSES/golang-x-text-BSD-3-Clause.txt":[]byte("Go x/text license test"),
   "LICENSES/go-toolchain-BSD-3-Clause.txt":[]byte("Go toolchain license test"),

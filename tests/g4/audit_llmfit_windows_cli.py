@@ -77,6 +77,7 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--upstream",required=True,type=Path)
     ap.add_argument("--output",required=True,type=Path)
+    ap.add_argument("--inventory",required=True,type=Path)
     opts=ap.parse_args()
     root=opts.upstream.resolve()
     if command(["git","rev-parse","HEAD"],root).strip().lower()!=COMMIT:
@@ -94,6 +95,16 @@ def main():
     if not all(t in builder for t in ("llmfit-web","dist","include_bytes!")):
         raise ValueError("upstream embed recipe changed")
     report=collect(meta,tree,npm)
+    static=opts.inventory.read_text(encoding="utf-8")
+    if static.count("BEGIN_COMPONENTS\\n") != 1 or static.count("\\nEND_COMPONENTS") != 1:
+        raise ValueError("static component inventory format invalid")
+    actual=static.split("BEGIN_COMPONENTS\\n",1)[1].split("\\nEND_COMPONENTS",1)[0].splitlines()
+    expected=[c["name"]+"@"+c["version"]+" | "+str(c["license_spdx"] or "UNKNOWN")+
+              " | notices="+(",".join(c["notice_files"]) or "MISSING")
+              for c in report["rust_packages"]]
+    if actual!=expected:
+        raise ValueError("static Windows CLI package inventory drifts from locked source")
+    report["checked_component_inventory"]="packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt"
     report["source_sha256"]={
       p:hashlib.sha256((root/p).read_bytes()).hexdigest()
       for p in ("Cargo.lock","llmfit-tui/Cargo.toml","llmfit-core/Cargo.toml",
