@@ -11,6 +11,7 @@ on:
       - 'docs/G4_1_INTERNAL_WINDOWS_ZIP.md'
       - 'docs/G4_2_ACTIONS_ARTIFACT.md'
       - 'README.md'
+      - '.gitattributes'
       - '.github/workflows/g4-1-private-zip.yml'
   workflow_dispatch:
 
