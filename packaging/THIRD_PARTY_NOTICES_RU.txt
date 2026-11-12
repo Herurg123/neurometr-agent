@@ -11,11 +11,12 @@
    LICENSES/rust-cli-source-license-texts.txt. Отсутствующие в Cargo crates тексты дополнительно взяты из upstream:
    LICENSES/clipboard-win-BSL-1.0.txt — Boost Software License 1.0,
    автор Douman, исходный репозиторий https://github.com/DoumanAsh/clipboard-win,
-   snapshot ed27008ae5d1f10cfbb266de039f0fb35fd05a56 (upstream 5.4.3,
-   НЕ исторический тег 5.4.1).
+   архивный commit версии 5.4.1: 3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342.
+   Полный исходный LICENSE совпадает с приложенным файлом.
    LICENSES/rmcp-3.5.1-upstream-LICENSE.txt — исходный upstream
    rmcp-v3.5.1 и rmcp-macros-v3.5.1, содержит переходные MIT/Apache условия,
-   https://github.com/modelcontextprotocol/rust-sdk .
+   https://github.com/modelcontextprotocol/rust-sdk ;
+   тег rmcp-v3.5.1 => commit 79437f291b2c44053d00dcd5db969fd0cca7c887.
    Отдельная корневая MIT llmfit/core уже включена.
    Точный SBOM подписанного EXE/аттестация исходников остаются незавершёнными.
    См. LLMFIT_WINDOWS_CLI_AUDIT_RU.txt. Публичная выдача блокируется gate.

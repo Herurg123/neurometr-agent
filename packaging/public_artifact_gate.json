@@ -18,13 +18,15 @@
     "rust_windows_cli_sbom_sha256": null,
     "rust_complete_license_notices_sha256": null,
     "npm_embedded_asset_inventory_sha256": null,
-    "audit_blocker": "All 215 candidate Rust crates have source license texts from 366 original crate files plus MIT root and upstream BSL/MCP transition LICENSE supplements; however clipboard-win@5.4.1 supplement is pinned to later upstream commit, rmcp transitional Apache/MIT contribution lineage is unreviewed, and exact official signed EXE Rust+embedded npm provenance remains unattested.",
+    "audit_blocker": "All 215 Windows CLI source candidates documented; 366 original Cargo crate LICENSE/NOTICE files plus pinned matching BSL (clipboard-win@5.4.1) and rmcp-v3.5.1 MIT/Apache transition upstream license supplemented. Remain blocked: rmcp transitional per-contribution copyright/license lineage and independent official signed EXE Rust + embedded npm assets build provenance/attestation are not established.",
     "rust_lockfile_workspace_entries": 659,
     "rust_windows_cli_candidate_count": 215,
     "rust_windows_cli_inventory_ref": "packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt",
     "upstream_supplement_license_refs": [
       "packaging/licenses/clipboard-win-BSL-1.0.txt",
       "packaging/licenses/rmcp-3.5.1-upstream-LICENSE.txt"
-    ]
+    ],
+    "clipboard_win_5_4_1_source_commit": "3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342",
+    "rmcp_3_5_1_source_commit": "79437f291b2c44053d00dcd5db969fd0cca7c887"
   }
 }

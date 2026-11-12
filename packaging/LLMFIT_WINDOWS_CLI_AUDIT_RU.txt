@@ -37,17 +37,20 @@ SHA-256 ZIP: 1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489.
   dev-dependency jsonschema не относится к обычной CLI-сборке.
 
 НЕ УСТАНОВЛЕНО, ПУБЛИКАЦИЯ ОСТАЁТСЯ ЗАБЛОКИРОВАННОЙ:
-- Полный target-filtered Rust dependency graph с версиями/feature closure
-  и SPDX по Rust crates, включая proc-macro/build-time исполнения.
-  659 записей Cargo.lock охватывают весь workspace, не число CLI-компонентов.
+- НЕ завершена независимая аттестация фактической компиляции подписанного EXE.
+  Windows CI построил source-based Windows-target closure 215 package/version
+  по normal/build edges, включая proc-macro и build-time crates; это кандидаты,
+  а не доказанный состав машинного кода. Cargo.lock включает 659 записей
+  всего workspace. Полный inventory: LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt.
 - Полные лицензии, copyright и NOTICE каждого фактически нужного Rust crate
   частично включены через автоматическую привязку к Cargo.lock: полный набор
   имеющихся файлов лицензий/NOTICE хранится в
   LICENSES/rust-cli-source-license-texts.txt, с SHA исходного файла. Для
   crates без доступных стандартных notice файлов указано MISSING; такие
   обязательства пока нельзя объявить выполненными.
-- Отдельный машинно проверяемый SBOM на основе cargo metadata --locked
-  --filter-platform x86_64-pc-windows-msvc для package llmfit не получен.
+- Получена машинно проверяемая source-inventory на базе cargo metadata
+  --locked --filter-platform x86_64-pc-windows-msvc и cargo tree для llmfit;
+  не получен независимый SBOM именно официального подписанного EXE.
 - Официальный Authenticode=Valid подтверждает подпись EXE, но не является
   аттестацией его точного Cargo graph, фактических features, содержимого
   встроенного dist или исходного commit. Без upstream build provenance
@@ -76,12 +79,17 @@ APPENDIX: LICENSES/jsonschema-Apache-2.0.txt. Это не подтверждае
 ДОПОЛНИТЕЛЬНЫЕ ИСТОЧНИКИ ОТСУТСТВУЮЩИХ ТЕКСТОВ:
 - clipboard-win@5.4.1 не содержал LICENSE в crate archive (Cargo include
   ограничен src/Cargo.toml/README). Полный BSL-1.0 взят из upstream LICENSE
-  на snapshot ed27008ae5d1f10cfbb266de039f0fb35fd05a56; исходный
-  upstream уже версии 5.4.3, поэтому соответствие тексту конкретного
-  опубликованного crate версии 5.4.1 отдельно не аттестовано.
+  и перепроверен на точном upstream commit 5.4.1:
+  3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342 (Cargo.toml version=5.4.1).
+  Полный текст в комплекте побайтово совпадает с LICENSE на этом commit.
+  Это подтверждает соответствие upstream версии 5.4.1, но сам исходный
+  crates.io archive не содержал LICENSE из-за явного Cargo include.
 - rmcp@3.5.1 / rmcp-macros@3.5.1 не содержали LICENSE-like файлов в crate
   archive, но корневой upstream LICENSE тега rmcp-v3.5.1 предоставлен
-  отдельно: LICENSES/rmcp-3.5.1-upstream-LICENSE.txt. Важно: в нём
+  отдельно: LICENSES/rmcp-3.5.1-upstream-LICENSE.txt.
+  Annotated tag rmcp-v3.5.1 указывает на commit
+  79437f291b2c44053d00dcd5db969fd0cca7c887; текст перепроверен
+  на этом commit. Важно: в нём
   прямо указано, что не все прежние MIT-вклады перелицензированы на Apache.
   Следовательно, автоматическое отнесение всего crate только к Apache-2.0
   на основании Cargo license недостаточно без анализа lineage.
@@ -89,3 +97,8 @@ APPENDIX: LICENSES/jsonschema-Apache-2.0.txt. Это не подтверждае
 Пять отсутствующих стандартных filenames в source audit — это наблюдение
 Cargo crate archives; из них три дополнены upstream LICENSE, два MIT core.
 Нельзя объявлять аудит официального EXE закрытым без evidence сопоставимости.
+
+ПОСЛЕДНЯЯ ПРОВЕРКА ПРОИСХОЖДЕНИЯ (12.11.2026): исходная LICENSE
+clipboard-win 5.4.1 и LICENSE на закреплённом annotated tag rmcp-v3.5.1
+сверены побайтово с файлами в Agent. Не переносить эту сверку на
+подтверждение binary build provenance и web assets подписанного EXE.

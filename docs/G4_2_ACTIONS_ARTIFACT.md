@@ -83,3 +83,11 @@
 
 
 **Дополнение исходных лицензий:** upstream `clipboard-win` BSL-1.0 сохранён из закреплённого commit `ed27008...` (более поздний master 5.4.3, не tag исходного crate 5.4.1); `rmcp`/`rmcp-macros` используют общий upstream LICENSE тега `rmcp-v3.5.1`, который явно сохраняет MIT для ранее не перелицензированных contributions при переходе на Apache-2.0. Оба полных файла находятся в `LICENSES/` ZIP. Отличать наличие полного текста от полного coverage copyright и аттестации фактического бинарного EXE.
+
+
+### Точность upstream источников BSL и MCP
+
+- `clipboard-win 5.4.1`: [commit исходников версии 5.4.1](https://github.com/DoumanAsh/clipboard-win/commit/3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342) содержит `Cargo.toml version = 5.4.1` и `LICENSE` BSL-1.0; полный текст идентичен добавленному. Отсутствие LICENSE внутри `.crate` связано с `include` upstream, а не отсутствием лицензии.
+- `rmcp 3.5.1` и `rmcp-macros 3.5.1`: тег `rmcp-v3.5.1` указывает на commit `79437f291b2c44053d00dcd5db969fd0cca7c887`; корневой LICENSE совпадает с копией в ZIP, однако прямо различает старые MIT contributions и новые Apache-2.0. Установить применимые права только по строке SPDX нельзя.
+
+**Остаточное ограничение:** выдача официального подписанного llmfit Windows EXE без исходной build attestation не позволяет утверждать, что реконструкция Rust/npm идентична бинарнику. Статус gate остаётся `blocked`.

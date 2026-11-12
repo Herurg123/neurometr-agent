@@ -64,6 +64,12 @@ def verify(folder, commit, public=False):
             for filename in licenses:
                 lic = archive.read(ROOT + "LICENSES/" + filename).decode("utf-8")
                 assert "Permission is hereby granted" in lic and "Copyright" in lic, "incomplete npm license"
+            clipboard_text = archive.read(ROOT + "LICENSES/clipboard-win-BSL-1.0.txt").decode("utf-8")
+            assert "Boost Software License - Version 1.0" in clipboard_text
+            assert "Permission is hereby granted" in clipboard_text
+            rmcp_text = archive.read(ROOT + "LICENSES/rmcp-3.5.1-upstream-LICENSE.txt").decode("utf-8")
+            assert "licensing transition from the MIT License to the Apache License" in rmcp_text
+            assert "END OF TERMS AND CONDITIONS" in rmcp_text and "MIT License" in rmcp_text
             rust_text = archive.read(ROOT + "LICENSES/rust-cli-source-license-texts.txt").decode("utf-8")
             assert "BEGIN_LICENSE_TEXTS" in rust_text and "END_LICENSE_TEXTS" in rust_text
             assert "colored@3.1.1" in rust_text and "option-ext@0.2.0" in rust_text
