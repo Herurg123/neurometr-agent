@@ -8,8 +8,16 @@
    1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489
    В том числе MPL-2.0, BSL-1.0, ISC, Zlib и составные лицензии.
    Доступные полные исходные License/NOTICE-копии Rust crates:
-   LICENSES/rust-cli-source-license-texts.txt. Некоторые отсутствуют
-   в опубликованных crate packages: статус license audit не завершён.
+   LICENSES/rust-cli-source-license-texts.txt. Отсутствующие в Cargo crates тексты дополнительно взяты из upstream:
+   LICENSES/clipboard-win-BSL-1.0.txt — Boost Software License 1.0,
+   автор Douman, исходный репозиторий https://github.com/DoumanAsh/clipboard-win,
+   snapshot ed27008ae5d1f10cfbb266de039f0fb35fd05a56 (upstream 5.4.3,
+   НЕ исторический тег 5.4.1).
+   LICENSES/rmcp-3.5.1-upstream-LICENSE.txt — исходный upstream
+   rmcp-v3.5.1 и rmcp-macros-v3.5.1, содержит переходные MIT/Apache условия,
+   https://github.com/modelcontextprotocol/rust-sdk .
+   Отдельная корневая MIT llmfit/core уже включена.
+   Точный SBOM подписанного EXE/аттестация исходников остаются незавершёнными.
    См. LLMFIT_WINDOWS_CLI_AUDIT_RU.txt. Публичная выдача блокируется gate.
 
 2. Потенциально встроенные через llmfit-web/dist ресурсы:

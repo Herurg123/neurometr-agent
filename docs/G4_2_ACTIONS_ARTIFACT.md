@@ -80,3 +80,6 @@
 
 
 **Исправление Apache-2.0:** историческая upstream копия лицензии `jsonschema` обрывалась в конце Section 9. В G4.2 заменена полным стандартным текстом Apache Software Foundation (включая END OF TERMS и APPENDIX) из официального Apache-репозитория. ZIP smoke требует маркеры полной лицензии. Для Qwen 0.5B/1.5B добавлено copyright `Alibaba Cloud (2024)` из их LICENSE, веса моделей отсутствуют.
+
+
+**Дополнение исходных лицензий:** upstream `clipboard-win` BSL-1.0 сохранён из закреплённого commit `ed27008...` (более поздний master 5.4.3, не tag исходного crate 5.4.1); `rmcp`/`rmcp-macros` используют общий upstream LICENSE тега `rmcp-v3.5.1`, который явно сохраняет MIT для ранее не перелицензированных contributions при переходе на Apache-2.0. Оба полных файла находятся в `LICENSES/` ZIP. Отличать наличие полного текста от полного coverage copyright и аттестации фактического бинарного EXE.

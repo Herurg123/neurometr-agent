@@ -172,6 +172,8 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
   "LICENSES/llmfit-MIT.txt":"packaging/licenses/llmfit-MIT.txt",
   "LICENSES/react-family-MIT.txt":"packaging/licenses/react-family-MIT.txt",
   "LICENSES/rust-cli-source-license-texts.txt":"packaging/licenses/rust-cli-source-license-texts.txt",
+  "LICENSES/clipboard-win-BSL-1.0.txt":"packaging/licenses/clipboard-win-BSL-1.0.txt",
+  "LICENSES/rmcp-3.5.1-upstream-LICENSE.txt":"packaging/licenses/rmcp-3.5.1-upstream-LICENSE.txt",
   "LICENSES/js-tokens-MIT.txt":"packaging/licenses/js-tokens-MIT.txt",
   "LICENSES/loose-envify-MIT.txt":"packaging/licenses/loose-envify-MIT.txt",
   "DISTRIBUTION_TERMS_RU.txt":"packaging/DISTRIBUTION_TERMS_RU.txt",
@@ -291,6 +293,7 @@ func Verify(zipPath,dest string)(Manifest,error){
   "LICENSES/go-toolchain-BSD-3-Clause.txt","LICENSES/react-family-MIT.txt",
   "LICENSES/js-tokens-MIT.txt","LICENSES/loose-envify-MIT.txt",
   "LICENSES/rust-cli-source-license-texts.txt",
+  "LICENSES/clipboard-win-BSL-1.0.txt","LICENSES/rmcp-3.5.1-upstream-LICENSE.txt",
   "DISTRIBUTION_TERMS_RU.txt","DATA_SOURCE_ATTRIBUTION_RU.txt",
   "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt","LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt","THIRD_PARTY_NOTICES_RU.txt","README_RU.txt"}
  for _,p:=range required{if len(files[p])==0{return zero,ErrInvalidBundle}}

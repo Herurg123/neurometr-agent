@@ -72,3 +72,20 @@ rmcp@3.5.1, rmcp-macros@3.5.1 и корневых llmfit/llmfit-core (для п�
 стандартным полным текстом Apache Software Foundation, с END OF TERMS и
 APPENDIX: LICENSES/jsonschema-Apache-2.0.txt. Это не подтверждает
 автоматически требования для rmcp@3.5.1 или переходные notices upstream.
+
+ДОПОЛНИТЕЛЬНЫЕ ИСТОЧНИКИ ОТСУТСТВУЮЩИХ ТЕКСТОВ:
+- clipboard-win@5.4.1 не содержал LICENSE в crate archive (Cargo include
+  ограничен src/Cargo.toml/README). Полный BSL-1.0 взят из upstream LICENSE
+  на snapshot ed27008ae5d1f10cfbb266de039f0fb35fd05a56; исходный
+  upstream уже версии 5.4.3, поэтому соответствие тексту конкретного
+  опубликованного crate версии 5.4.1 отдельно не аттестовано.
+- rmcp@3.5.1 / rmcp-macros@3.5.1 не содержали LICENSE-like файлов в crate
+  archive, но корневой upstream LICENSE тега rmcp-v3.5.1 предоставлен
+  отдельно: LICENSES/rmcp-3.5.1-upstream-LICENSE.txt. Важно: в нём
+  прямо указано, что не все прежние MIT-вклады перелицензированы на Apache.
+  Следовательно, автоматическое отнесение всего crate только к Apache-2.0
+  на основании Cargo license недостаточно без анализа lineage.
+Лицензии llmfit и llmfit-core покрывает upstream MIT, включённая отдельно.
+Пять отсутствующих стандартных filenames в source audit — это наблюдение
+Cargo crate archives; из них три дополнены upstream LICENSE, два MIT core.
+Нельзя объявлять аудит официального EXE закрытым без evidence сопоставимости.

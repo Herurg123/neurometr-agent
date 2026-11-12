@@ -44,6 +44,8 @@ func makeSyntheticPackage(t *testing.T)testBundle{
   "LICENSES/llmfit-MIT.txt":[]byte("MIT full source copy test"),
   "LICENSES/react-family-MIT.txt":[]byte("React MIT notice test"),
   "LICENSES/rust-cli-source-license-texts.txt":[]byte("All source crate licenses synthetic fixture"),
+  "LICENSES/clipboard-win-BSL-1.0.txt":[]byte("Boost BSL license synthetic"),
+  "LICENSES/rmcp-3.5.1-upstream-LICENSE.txt":[]byte("RMCP Apache MIT license synthetic"),
   "LICENSES/js-tokens-MIT.txt":[]byte("js-tokens MIT notice test"),
   "LICENSES/loose-envify-MIT.txt":[]byte("loose-envify MIT notice test"),
   "DISTRIBUTION_TERMS_RU.txt":[]byte("Test distribution terms"),
