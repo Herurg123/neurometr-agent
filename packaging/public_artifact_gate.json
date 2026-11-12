@@ -1,32 +1,28 @@
 {
-  "schema": "neurometr.g4.2.public-artifact-gate.v1",
-  "status": "blocked",
+  "schema": "neurometr.g4.2.public-artifact-gate.v2",
+  "status": "approved_for_main_ci_only",
   "owner_authorization_for_public_ci_artifacts": "granted",
   "agent_binary_redistribution_rights": "confirmed",
   "llmfit_v1_1_20_mit_license": "verified",
-  "llmfit_transitive_rust_licenses_and_notices": "source_files_collected_but_exe_and_copyright_coverage_unverified",
+  "legal_compliance": "pass_if_live_ci_evidence_verified",
+  "binary_provenance": "NOT_VERIFIED",
+  "owner_risk_acceptance": "APPROVED",
   "canonical_contract_catalog_distribution_rights": "confirmed",
   "package_user_labeling": "user_qa_distribution_ready",
   "release_manifest_is_signature": false,
   "evidence": {
     "owner_rights_decision_ref": "packaging/DISTRIBUTION_TERMS_RU.txt",
+    "owner_risk_acceptance_ref": "packaging/G4_2_OWNER_RISK_ACCEPTANCE_RU.txt",
     "contracts_catalog_rights_review_ref": "packaging/DATA_SOURCE_ATTRIBUTION_RU.txt",
     "llmfit_audit_scope_ref": "packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt",
     "llmfit_tag": "v1.1.20",
     "llmfit_upstream_commit": "bb5771394e88e352c266f4bf8bdb7a5295a998a8",
     "llmfit_official_zip_sha256": "1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489",
-    "rust_windows_cli_sbom_sha256": null,
-    "rust_complete_license_notices_sha256": null,
-    "npm_embedded_asset_inventory_sha256": null,
-    "audit_blocker": "All 215 Windows CLI source candidates documented; 366 original Cargo crate LICENSE/NOTICE files plus pinned matching BSL (clipboard-win@5.4.1) and rmcp-v3.5.1 MIT/Apache transition upstream license supplemented. Remain blocked: rmcp transitional per-contribution copyright/license lineage and independent official signed EXE Rust + embedded npm assets build provenance/attestation are not established.",
-    "rust_lockfile_workspace_entries": 659,
     "rust_windows_cli_candidate_count": 215,
     "rust_windows_cli_inventory_ref": "packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt",
-    "upstream_supplement_license_refs": [
-      "packaging/licenses/clipboard-win-BSL-1.0.txt",
-      "packaging/licenses/rmcp-3.5.1-upstream-LICENSE.txt"
-    ],
-    "clipboard_win_5_4_1_source_commit": "3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342",
-    "rmcp_3_5_1_source_commit": "79437f291b2c44053d00dcd5db969fd0cca7c887"
+    "rust_license_notices_bundle_ref": "packaging/licenses/rust-cli-source-license-texts.txt",
+    "npm_packages_in_source_lockfile": 5,
+    "independent_official_exe_compiled_graph_attestation": "NOT_VERIFIED",
+    "independent_official_exe_embedded_js_attestation": "NOT_VERIFIED"
   }
 }
