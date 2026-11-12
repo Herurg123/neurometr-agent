@@ -1,6 +1,6 @@
-# A3.4 · Защищённый localhost-интерфейс и локальная история (Draft)
+# A3.4 · Защищённый localhost-интерфейс и локальная история
 
-**Основание:** Agent `main` `317b1c552ab89b0f743a41f495a9bc2c3ebc7de2`; Web `main` `c0b9bc9d3a0e99e69dbde5f00f722b0225255b96` (только чтение). Контракт `diagnostic` v0.1.0 и offline-каталог `2026.11.11.2` с SHA-256 `1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2` **не изменяются**. Разработка ограничена Agent, без merge/release/deploy.
+**Исходная база:** Agent `main` `317b1c552ab89b0f743a41f495a9bc2c3ebc7de2`; Web `main` `c0b9bc9d3a0e99e69dbde5f00f722b0225255b96` (только чтение). Контракт `diagnostic` v0.1.0 и офлайн-каталог `2026.11.11.2` с SHA-256 `1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2` **не изменены**. A3.4 реализован в Agent и технически принят по итогам CI; этот документ не утверждает факт merge или публичного выпуска.
 
 ## 1. Состав реализации
 
@@ -22,7 +22,7 @@
 ## 3. Хранилище и права Windows
 
 - Для каждого отдельного отчёта используется безопасный `run_id`, ограничение 2 МиБ, повторная `FullValidator.ValidateBytes`, запись `CreateTemp` → `Chmod(0600)` **как дополнительная мера, не доказательство Windows ACL** → `Sync` → закрытие → Win32 `MoveFileW` в том же каталоге **без замены существующего файла**. Гонка параллельных записей защищена mutex, уже существующий UUID не перезаписывается.
-- Native Windows gate `GetNamedSecurityInfoW` и `GetAce` инспектирует реальные allow ACE DACL; разрешены только текущий SID, SYSTEM, Administrators, OWNER/CREATOR. NULL DACL, чужие allow ACE и недоступные ACL → отказ в открытии истории. `GetFileAttributesW` отвергает reparse point/junction как для личного app-каталога, так и самой истории. При ошибке приложение закрывается без выдачи приватных данных. CI дополнительно проводит независимый ACL-аудит через PowerShell, не печатая SID и пути.
+- Native Windows gate `GetNamedSecurityInfoW` и `GetAce` инспектирует реальные allow ACE DACL; разрешены только текущий SID, SYSTEM, Administrators, OWNER/CREATOR. NULL DACL, чужие allow ACE и недоступные ACL → отказ в открытии истории. `GetFileAttributesW` отвергает reparse point/junction как для личного app-каталога, так и самой истории. При ошибке приложение закрывается без выдачи приватных данных. CI дополнительно проводит независимый ACL-аудит через `icacls`, не печатая SID и пути.
 - **Граница защиты:** от сторонних Windows-учётных записей при корректно настроенном ACL; локальный администратор, SYSTEM и вредоносное ПО с правами текущего пользователя по-прежнему могут получить доступ. Содержимое не шифруется. Это не доказательство абсолютной безопасности; реальное поведение ACL проверяется на hosted Windows и требует отдельной приёмки на компьютере владельца.
 - При перечислении истории повреждённые записи пропускаются и учитываются в `invalid_count`; остальные продолжают работать. История не удаляется автоматически. Отображение ограничено 2000 валидными записями за вызов, без удаления старых.
 - Сообщения об ошибках UI намеренно обобщены: никакие внутренние пути, hostnames, сырые логи, приватный JSON или токены не попадают в HTTP-ошибки и CI stdout.
@@ -46,16 +46,24 @@
 4. `NPU` не опрашивается, свободная VRAM и реальная работа GPU runtime не измеряются. Cloud checks, llmfit system/fit и model benchmarks не запускаются. Не создавать оценок TPS из каталога.
 5. Хранилище не зашифровано. Нет автоматического удаления, миграции между пользователями и синхронизации. Просмотр файлов с будущими неподдерживаемыми версиями заканчивается контролируемым отказом.
 
-## 7. Подтверждённые результаты A3.4 CI (кодовый HEAD `21155ed5cb79016be61c057e3f60bfea19f8a66a`)
+## 7. Финальная контрольная точка A3.4
 
-[GitHub Actions #43217040609](https://github.com/Herurg123/neurometr-agent/actions/runs/43217040609): **3/3 PASS**. Ubuntu 24.04: **207 PASS**, 0 FAIL и 2 ожидаемых SKIP live-only llmfit. Windows 2025 x64: **207 PASS**, 0 FAIL и 2 ожидаемых SKIP. Прошли `go vet`, Windows x64 build, pin-копия 23 канонических файлов и доверенный bundled-каталог.
+**Кодовый HEAD при технической приёмке:** `dc7d90e9c5247d831d24fbd38fa7f5ce0484d448`.
 
-Реальный Windows hosted smoke: `A3_4_EXTERNAL_INTERFACE=DENIED`, `A3_4_HOST_ORIGIN_CSRF_CORS_GET=DENIED`, `A3_4_NATIVE_WINDOWS=PASS`, `FULL_GO_VALIDATOR=PASS`, `WEB_PYTHON=PASS`, `BUNDLED_REF=PASS`, `NO_LLMFIT=PASS`, `PII=PASS`.
+**GitHub Actions:** [#43218035677](https://github.com/Herurg123/neurometr-agent/actions/runs/43218035677), **3/3 PASS** на указанном HEAD.
 
-Проверки хранения и UX: `A3_4_WINDOWS_ACL_AUDIT=PASS DIRECTORY_AND_REPORT=PRIVATE` (независимый `icacls` помимо встроенного Win32 DACL gate); `A3_4_BROWSER_SMOKE=PASS` на установленном Edge в headless-режиме без screenshots/video/traces; `A3_4_HISTORY_RESTART=PASS`, `CORRUPT_ISOLATION=PASS`, `UNSUPPORTED_VERSION=REJECTED`, `OVERSIZE=REJECTED`. Отчёт: **2285 байт**, один DXGI-адаптер; это результат **виртуального GitHub-hosted Windows runner**.
+| Проверка | Результат |
+|---|---|
+| Ubuntu 24.04, Go unit/integration, F01–F08, security/history, `go vet`, Windows x64 cross-build | **207 PASS, 0 FAIL, 2 ожидаемых SKIP** live-only llmfit |
+| Windows 2025 x64, те же Go-регрессии и `go vet` | **207 PASS, 0 FAIL, 2 ожидаемых SKIP** live-only llmfit |
+| Реальный Windows localhost и нативный диагностический экспорт, Go FullValidator и независимый Python-валидатор Web | **PASS** |
 
-Отдельная Go UI-регрессия `A3_4_UI_PARTIAL=PASS`: при синтетическом отказе GPU сохраняются CPU/RAM, `overall_status=partial`, структурированная ошибка и полный валидированный JSON, доступный через HTTP-историю. Реальный GPU backend не запускался.
+**Реальный Windows hosted smoke:** `A3_4_EXTERNAL_INTERFACE=DENIED`, `A3_4_HOST_ORIGIN_CSRF_CORS_GET=DENIED`, `A3_4_NATIVE_WINDOWS=PASS`, `FULL_GO_VALIDATOR=PASS`, `WEB_PYTHON=PASS`, `BUNDLED_REF=PASS`, `NO_LLMFIT=PASS`, `PII=PASS`. Сформирован обычный, не test-only `diagnostic.json`: **2283 байта**, один DXGI-адаптер на GitHub-hosted Windows runner; `catalog_ref.origin=bundled` подтверждён.
 
-CI не сохраняет и не публикует исходный JSON, HTML dump, токены, аппаратные модели или SID; вывод ограничен результатами тестов, размером и количеством GPU. На реальном компьютере владельца UI/ACL/драйверы ещё не испытаны.
+**Windows-хранилище и браузер:** `A3_4_WINDOWS_ACL_AUDIT=PASS DIRECTORY_AND_REPORT=PRIVATE` (независимый `icacls` и встроенная проверка Win32 DACL); `A3_4_BROWSER_SMOKE=PASS` в установленном headless Microsoft Edge, без screenshots, video или traces. Проверки `A3_4_HISTORY_RESTART=PASS`, `CORRUPT_ISOLATION=PASS`, `UNSUPPORTED_VERSION=REJECTED`, `OVERSIZE=REJECTED` подтвердили сохранность доступных записей при повреждении соседних.
 
-**Статус:** работа A3.4 остаётся Draft PR #7; CI подтверждает тестовый cloud runner, не merge и не публичный выпуск. Merge, release, deployment, пользовательский ZIP и следующий этап требуют отдельного решения.
+**Частичные результаты:** `A3_4_UI_PARTIAL=PASS`: при синтетическом отказе GPU сохранены сведения CPU/RAM, `overall_status=partial`, структурированная ошибка и валидированный JSON в локальной истории. Не заявляется выполнение GPU backend или запуск модели.
+
+**Граница доказательств:** CI не публикует сырые диагностические JSON, HTML dump, SID, session/CSRF-токены или аппаратные характеристики runner. Подтверждены запуск и ACL на виртуальном Windows 2025 runner, **не** на компьютере владельца. Локальная история **не шифруется**, пользовательский ZIP **не создан и не выпущен**; ручная UX-приёмка на ПК владельца, NPU, свободная VRAM, ускорение GPU/SYCL и измерение TPS не проводились.
+
+**Статус этапа:** реализация и техническая приёмка A3.4 подтверждены указанным CI. Текущий статус [PR #7](https://github.com/Herurg123/neurometr-agent/pull/7) и факт merge следует проверять в GitHub; публичный выпуск, deployment и переход к следующему этапу не заявляются.
