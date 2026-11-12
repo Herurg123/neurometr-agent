@@ -80,15 +80,15 @@ func ensurePrivateDirectory(path string)error{
  me,err:=currentSID()
  if err!=nil{return ErrUnavailable}
  pathPtr:=utf16(path)
- var dacl,desc uintptr
+ var dacl,desc unsafe.Pointer
  status,_,_:=getNamedInfo.Call(
   uintptr(unsafe.Pointer(pathPtr)),seFileObject,daclSecurityInformation,
   0,0,uintptr(unsafe.Pointer(&dacl)),0,uintptr(unsafe.Pointer(&desc)),
  )
- if status!=0||desc==0{return ErrUnavailable}
- defer localFree.Call(desc)
+ if status!=0||desc==nil{return ErrUnavailable}
+ defer localFree.Call(uintptr(desc))
  // A NULL DACL grants unrestricted access to everybody.
- if dacl==0{return ErrUnavailable}
+ if dacl==nil{return ErrUnavailable}
  type aclHeader struct{ Revision,Reserved byte; Size,Count,Reserved2 uint16 }
  hdr:=(*aclHeader)(unsafe.Pointer(dacl))
  if hdr.Size<8||hdr.Count>4096{return ErrUnavailable}
@@ -100,15 +100,15 @@ func ensurePrivateDirectory(path string)error{
   "S-1-3-4":true, // OWNER RIGHTS
  }
  for i:=0;i<int(hdr.Count);i++{
-  var ptr uintptr
-  ok,_,_:=getAce.Call(dacl,uintptr(i),uintptr(unsafe.Pointer(&ptr)))
-  if ok==0||ptr==0{return ErrUnavailable}
-  t:=*(*byte)(unsafe.Pointer(ptr))
+  var ptr unsafe.Pointer
+  ok,_,_:=getAce.Call(uintptr(dacl),uintptr(i),uintptr(unsafe.Pointer(&ptr)))
+  if ok==0||ptr==nil{return ErrUnavailable}
+  t:=*(*byte)(ptr)
   if t==1||t==6{continue} // deny access ACE
   if t!=0{ // unknown allow/object ACE type: refuse to make ACL guarantees
    return ErrUnavailable
   }
-  sid,err:=sidString(ptr+8) // ACCESS_ALLOWED_ACE SidStart
+  sid,err:=sidString(uintptr(unsafe.Add(ptr,8))) // ACCESS_ALLOWED_ACE SidStart
   if err!=nil||!allowed[sid]{return ErrUnavailable}
  }
  return nil
