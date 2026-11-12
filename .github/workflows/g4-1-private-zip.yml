@@ -153,6 +153,10 @@ jobs:
           go run ./cmd/catalogcheck -root $dest
           if ($LASTEXITCODE -ne 0) { throw 'UNPACKED_CATALOG_PIN_FAIL' }
           ('G4_UNPACKED_PRIVATE=' + $dest) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $hAgent = (Get-FileHash -LiteralPath (Join-Path $dest 'Neurometr.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $hCli = (Get-FileHash -LiteralPath (Join-Path $dest 'bin\llmfit.exe') -Algorithm SHA256).Hash.ToLowerInvariant()
+          $hManifest = (Get-FileHash -LiteralPath (Join-Path $dest 'release-manifest.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host ('G4_1_PACKAGE_FILE_SHA256_AGENT=' + $hAgent + ' LLMFIT=' + $hCli + ' MANIFEST=' + $hManifest)
           Write-Host 'G4_1_EXTRACTED_CONTRACTS_AND_CATALOG=PASS'
       - name: Real packaged Windows localhost, no SDK, native diagnostic, restart, missing CLI
         shell: pwsh
