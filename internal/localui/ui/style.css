@@ -1,0 +1,26 @@
+:root{font-family:system-ui,"Segoe UI",Arial,sans-serif;color:#172333;background:#f4f6f9;font-size:15px;line-height:1.5}
+*{box-sizing:border-box}body{margin:0}button{cursor:pointer;font:inherit;border:0;border-radius:10px;padding:11px 18px;font-weight:650}
+button:disabled{opacity:.58;cursor:wait}button:focus-visible,a:focus-visible{outline:3px solid #2b71a8;outline-offset:3px}
+a{color:#0a5889}.top{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #e1e7ed;padding:16px max(20px,calc((100vw - 1060px)/2));gap:16px}
+.brand{display:flex;align-items:center;gap:12px}.brand strong{font-size:1.15rem}.brand small{display:block;color:#617084}
+.logo{background:#152e48;color:#fff;display:grid;place-items:center;width:38px;height:38px;border-radius:11px;font-weight:800}
+.offline{color:#126e4f;background:#e9f7ef;border-radius:50px;padding:6px 12px;font-size:.85rem;font-weight:700}
+.layout{max-width:1060px;margin:auto;padding:30px 18px 44px;display:grid;gap:22px}
+.intro{background:#122b45;color:white;padding:32px;border-radius:18px}.intro h1{font-size:clamp(1.55rem,3vw,2.15rem);line-height:1.2;margin:10px 0}.intro p{max-width:650px;color:#d4e2ef}
+.eyebrow{color:#92c3f1;font-weight:700;letter-spacing:.045em;font-size:.8rem;text-transform:uppercase}
+.actions{display:flex;align-items:center;gap:17px;flex-wrap:wrap;margin-top:26px}.actions button{background:#f9c94e;color:#142232}.actions span{font-size:.92rem;color:#d3e4f2}
+.report,.history,.disclaimer{background:#fff;border:1px solid #e0e6ee;border-radius:16px;padding:22px}.section-heading{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+h2{font-size:1.2rem;margin:0}#report-date{color:#64748b;margin:4px 0 0;font-size:.87rem}
+.download{display:inline-block;text-decoration:none;border-radius:9px;padding:10px 13px;background:#e8f1fa;font-weight:700}
+.empty{color:#617084;padding:24px 0}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}.stat{background:#f7f9fc;padding:15px;border-radius:11px;min-width:0}
+.stat label{display:block;color:#566c82;font-size:.83rem;margin-bottom:6px}.stat div{font-weight:700;overflow-wrap:anywhere}.sectionlabel{font-size:1rem;font-weight:700;margin:20px 0 8px}
+.status{display:inline-block;border-radius:40px;padding:3px 10px;font-weight:750;font-size:.8rem;background:#e9edf2;color:#2d4157}
+.status.ok{background:#d7f4e5;color:#0d6641}.status.partial{background:#fff0c9;color:#775000}.status.failed{background:#ffdfdd;color:#9b2024}.status.skipped{background:#e9edf2;color:#536171}
+ul.clean{margin:8px 0;padding-left:19px}li{margin:5px 0;overflow-wrap:anywhere}
+.history-items{display:grid;gap:9px}.history-item{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;padding:12px 14px;background:#f6f9fc;border:1px solid #e2eaf2;border-radius:10px;width:100%;font-weight:500}
+.history-item:hover{border-color:#6195ba}.history-item strong{display:block}.history-item small{color:#6a798b}.secondary{border:1px solid #d9e3ed;background:#f6f8fb;color:#29435d;padding:7px 12px}
+.note{color:#657385;font-size:.85rem}.disclaimer{background:#f0f5fa}.disclaimer p{color:#485c70;margin:8px 0}
+details{margin-top:20px;border-top:1px solid #e1e6ee;padding-top:14px}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;word-break:break-word;max-height:370px;overflow:auto;font-size:.79rem;background:#f4f7fa;border-radius:9px;padding:12px}
+.hidden{display:none!important}footer{max-width:1060px;margin:auto;padding:0 20px 30px;color:#64758a;font-size:.8rem}
+@media(max-width:560px){.top{padding:12px 18px}.offline{font-size:.7rem}.intro{padding:22px}.layout{padding:20px 12px}.report,.history,.disclaimer{padding:16px}}
+@media(prefers-color-scheme:dark){:root{background:#101820;color:#ecf3fa}.top,.report,.history{background:#182736;border-color:#304254}.logo{background:#314d67}.intro{background:#203a53}.stat,.history-item,pre{background:#26394a;color:#eff6fc;border-color:#3a5066}.stat label,#report-date,.note,.empty,.history-item small{color:#b5c7d7}.download{background:#2a4962;color:#c8edff}.secondary{background:#304456;color:#e6f2fc;border-color:#425e76}.disclaimer{background:#24384b;border-color:#385169}.disclaimer p{color:#d2e1ee}}
