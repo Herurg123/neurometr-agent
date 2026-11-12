@@ -136,24 +136,46 @@ def integrity_checks(package,archive,official):
         fail(len(names)==len(set(n.casefold() for n in names)),"duplicate ZIP entry")
     print("G4_1_ZIP_PATH_TRAVERSAL=DENIED DUPLICATES=DENIED")
 
-def negative_zip_manifest(archive,verify_command):
-    # Cheap no-weight negative: mutate only the UTF-8 manifest entry, rezip,
-    # and confirm the Go validator refuses the entire archive without extract.
-    root=tempfile.TemporaryDirectory(prefix="g4-bad-zip-private-")
-    try:
-        bad=Path(root.name)/"tampered.zip"
-        with zipfile.ZipFile(archive) as original,zipfile.ZipFile(bad,"w",compression=zipfile.ZIP_DEFLATED) as out:
-            for entry in original.infolist():
-                raw=original.read(entry.filename)
-                if entry.filename.endswith("/release-manifest.json"):
+def negative_zip_integrity(archive):
+    # Mutate a verified FULL package and assert no extraction starts. This
+    # exercises manifest, missing file, duplicate-case aliases, symlinks and
+    # path traversal beyond the synthetic Go unit tests.
+    with zipfile.ZipFile(archive) as original:
+        entries=[(x,original.read(x.filename)) for x in original.infolist()]
+    root="Neurometr-Windows-x64/"
+    def construct_bad(kind,target):
+        with zipfile.ZipFile(target,"w") as out:
+            for info,raw in entries:
+                if kind=="missing_file" and info.filename==root+"README_RU.txt":
+                    continue
+                if kind=="file_digest" and info.filename==root+"README_RU.txt":
+                    raw=raw+b"\nMUTATED\n"
+                if kind=="manifest_metadata" and info.filename==root+"release-manifest.json":
                     raw=raw.replace(b"internal-ci-only-not-for-publication",b"public-release",1)
-                out.writestr(entry.filename,raw)
-        p=subprocess.run(verify_command+[str(bad)],cwd=ROOT,
-            stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=35)
-        fail(p.returncode!=0,"forged ZIP manifest incorrectly accepted")
-    finally:
-        root.cleanup()
-    print("G4_1_NEGATIVE_MANIFEST_TAMPER=REJECTED")
+                out.writestr(info,raw)
+            if kind=="traversal":
+                out.writestr(root+"../outside-private-check.txt",b"would be unsafe")
+            elif kind=="duplicate_case":
+                out.writestr(root+"BIN/LLMFIT.EXE",b"MZalias")
+            elif kind=="symlink":
+                import stat
+                link=zipfile.ZipInfo(root+"symlink-link")
+                link.create_system=3
+                link.external_attr=(stat.S_IFLNK | 0o777)<<16
+                out.writestr(link,b"../../untrusted")
+    with tempfile.TemporaryDirectory(prefix="g4-hostile-zip-private-") as temporary:
+        base=Path(temporary)
+        for kind in ("missing_file","file_digest","manifest_metadata","traversal","duplicate_case","symlink"):
+            modified=base/(kind+".zip")
+            extract=base/(kind+"-should-not-exist")
+            construct_bad(kind,modified)
+            p=subprocess.run(["go","run","./cmd/g4pack","verify","-zip",str(modified),
+                "-dest",str(extract)],cwd=ROOT,stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,timeout=45)
+            fail(p.returncode!=0, "hostile ZIP incorrectly accepted: "+kind)
+            fail(not extract.exists(),"hostile ZIP wrote outside accepted extraction: "+kind)
+            print("G4_1_NEGATIVE_ZIP="+kind+" REJECTED=PASS")
+
 
 def main():
     fail(sys.platform=="win32","Windows-only G4.1 smoke")
@@ -163,6 +185,7 @@ def main():
     official=Path(sys.argv[3])
     fail(" " in str(package),"unpacked path must contain spaces")
     integrity_checks(package,archive,official)
+    negative_zip_integrity(archive)
     workdir=tempfile.TemporaryDirectory(prefix="G4 CWD outside package ")
     try:
         work=Path(workdir.name)
