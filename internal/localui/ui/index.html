@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Нейрометр · Локальная диагностика</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><div class="logo" aria-hidden="true">N</div><div><strong>Нейрометр</strong><small>Локальная диагностика Windows</small></div></div>
+    <span class="offline">Работает без Интернета</span>
+  </header>
+  <main class="layout">
+    <section class="intro" aria-labelledby="main-title">
+      <div class="eyebrow">Компьютер · Аппаратная диагностика</div>
+      <h1 id="main-title">Проверка возможностей вашего ПК</h1>
+      <p>Проверяем доступные сведения об оборудовании, не загружая модели и не отправляя результаты в Интернет. Неизвестные значения останутся неизвестными.</p>
+      <div class="actions"><button id="run" type="button" disabled>Проверить компьютер</button><span id="activity" role="status" aria-live="polite">Подключение к локальному агенту…</span></div>
+    </section>
+    <section class="report" aria-labelledby="report-title">
+      <div class="section-heading"><div><h2 id="report-title">Результат проверки</h2><p id="report-date">Диагностика ещё не выбрана</p></div><a id="download" class="download hidden" href="#" download>Экспортировать JSON</a></div>
+      <div id="report-content" class="empty">Нажмите «Проверить компьютер» или откройте отчёт из истории.</div>
+      <details id="raw-details" class="hidden"><summary>Показать полный диагностический JSON</summary><pre id="raw-json"></pre></details>
+    </section>
+    <section class="history" aria-labelledby="history-title">
+      <div class="section-heading"><h2 id="history-title">История проверок</h2><button type="button" class="secondary" id="refresh">Обновить</button></div>
+      <div id="history-items" class="history-items">Загрузка истории…</div>
+      <p id="history-note" class="note"></p>
+    </section>
+    <aside class="disclaimer">
+      <strong>Что означают результаты?</strong>
+      <p>Обнаружение GPU не доказывает работу ускорителя. Свободная видеопамять и наличие NPU пока не проверяются. Каталог моделей содержит данные, но ни одна модель автоматически не запускается: нет замеренных TPS, fit или подтверждённого backend.</p>
+      <p>Отчёты хранятся локально для текущего пользователя Windows. Экспорт производится только по вашему действию.</p>
+    </aside>
+  </main>
+  <footer>Нейрометр · Диагностический контракт 0.1.0 · Локальный интерфейс A3.4 (Draft)</footer>
+</body>
+</html>
