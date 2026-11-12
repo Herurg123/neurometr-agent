@@ -50,11 +50,23 @@ def verify(folder, commit, public=False):
             content = archive.read(ROOT + e["path"])
             assert len(content) == e["bytes"] and sha(content) == e["sha256"], "per-file integrity failed"
         if public:
+            assert manifest["format"] == "neurometr.g4.2.test-inventory", "unexpected test inventory format"
             assert manifest["distribution"] == "user-qa-distribution", "package still marked internal-only"
-            for n in (ROOT + "README_RU.txt", ROOT + "THIRD_PARTY_NOTICES_RU.txt"):
+            necessary = ("README_RU.txt", "THIRD_PARTY_NOTICES_RU.txt",
+                         "DISTRIBUTION_TERMS_RU.txt", "DATA_SOURCE_ATTRIBUTION_RU.txt",
+                         "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt")
+            for n in (ROOT + x for x in necessary):
                 text = archive.read(n).decode("utf-8")
                 assert "не разрешён к распространению" not in text.lower()
                 assert "не для публичного распространения" not in text.lower()
+                assert "internal-ci-only" not in text.lower()
+            licenses = ("react-family-MIT.txt", "js-tokens-MIT.txt", "loose-envify-MIT.txt")
+            for filename in licenses:
+                lic = archive.read(ROOT + "LICENSES/" + filename).decode("utf-8")
+                assert "Permission is hereby granted" in lic and "Copyright" in lic, "incomplete npm license"
+            assert "Qwen2.5-0.5B" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
+            assert "Qwen2.5-1.5B" in archive.read(ROOT + "DATA_SOURCE_ATTRIBUTION_RU.txt").decode("utf-8")
+            assert b"internal-ci-only" not in archive.read(ROOT + "release-manifest.json"), "internal-only manifest leaked"
     return len(raw), sha(raw), len(entries)
 
 if __name__ == "__main__":

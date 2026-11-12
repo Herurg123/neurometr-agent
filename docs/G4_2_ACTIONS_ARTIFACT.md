@@ -56,3 +56,14 @@
 ## Контроль результата PR
 
 После CI указать commit HEAD, ссылки Go+Windows jobs, подтверждённый `NO_ARTIFACT_UPLOAD`, SHA/размер внутреннего ZIP, список diff, `main` и Draft PR. **Merge только по отдельному решению оркестратора.**
+
+
+## G4.2 — обновление аудита после решения владельца от 12.11.2026 (Draft)
+
+Владелец **разрешил тестовые бинарные комплекты через публичные GitHub Actions artifacts**, без публикации исходного кода, OSS-лицензии или GitHub Release. В пакет теперь входят `DISTRIBUTION_TERMS_RU.txt`, `DATA_SOURCE_ATTRIBUTION_RU.txt`, `LLMFIT_WINDOWS_CLI_AUDIT_RU.txt` и подтверждённые полные MIT-тексты для пяти npm production packages. Manifest тестовой сборки использует `user-qa-distribution`, а не прежнюю внутреннюю маркировку.
+
+Восстановлена **точная целевая область**: `llmfit` (TUI/CLI) + `llmfit-core`, Windows `x86_64-pc-windows-msvc`, Rust normal/build edges и default features. Dev-dependencies и `llmfit-desktop` не учитываются как runtime CLI. В upstream release recipe **сначала** выполняются `npm ci` и `npm run build`, затем Rust build: JS/CSS могут встраиваться в подписанный EXE через `build.rs`. Нельзя считать 659 записей всего `Cargo.lock` списком лицензий CLI.
+
+В CI предусмотрено независимое чтение **точного upstream commit**, `cargo tree --locked --target ... --edges normal,build --package llmfit`, `cargo metadata --locked --filter-platform ...` и npm lockfile. Скрипт печатает разрешённый перечень Rust компонентов с версиями, SPDX и доступными license/NOTICE filename; полный отчёт сохраняется только во временном каталоге CI. Это целевая **реконструкция исходников**, не доказательство идентичного кода в официальном подписанном EXE.
+
+**Открытый блокер:** полный Rust transitive SBOM и обязательные copyright/NOTICE/полные лицензионные тексты ещё не подтверждены и не включены в комплект, upstream подписанный EXE не даёт собственной сборочной аттестации содержимого Rust и npm dist. Поэтому `public_artifact_gate.json` остаётся `blocked`. Простая подмена строк `approved` или фиктивных SHA не пройдёт gate: нужны актуальный проверенный Cargo-отчёт на Windows runner, совпадающий с закреплённым SBOM, а также полный реестр и тексты notices. Сам ZIP теперь проходит публичную проверку маркировки в PR без публикации из PR.

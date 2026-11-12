@@ -2,17 +2,23 @@
   "schema": "neurometr.g4.2.public-artifact-gate.v1",
   "status": "blocked",
   "owner_authorization_for_public_ci_artifacts": "granted",
-  "agent_binary_redistribution_rights": "needs_documented_owner_decision",
+  "agent_binary_redistribution_rights": "confirmed",
   "llmfit_v1_1_20_mit_license": "verified",
   "llmfit_transitive_rust_licenses_and_notices": "not_audited",
-  "canonical_contract_catalog_distribution_rights": "not_audited",
-  "package_user_labeling": "internal_only_not_ready",
+  "canonical_contract_catalog_distribution_rights": "confirmed",
+  "package_user_labeling": "user_qa_distribution_ready",
   "release_manifest_is_signature": false,
   "evidence": {
-    "approved_source_commit": "dbdd5984823be88eacc407046af12cd86e8d154f",
+    "owner_rights_decision_ref": "packaging/DISTRIBUTION_TERMS_RU.txt",
+    "contracts_catalog_rights_review_ref": "packaging/DATA_SOURCE_ATTRIBUTION_RU.txt",
+    "llmfit_audit_scope_ref": "packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt",
     "llmfit_tag": "v1.1.20",
+    "llmfit_upstream_commit": "bb5771394e88e352c266f4bf8bdb7a5295a998a8",
     "llmfit_official_zip_sha256": "1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489",
-    "rust_lockfile_package_entries": 659,
-    "notes": "The lock contains multiple workspace targets; 659 is not the number embedded in the Windows CLI. A compiled-component SBOM and notices are needed."
+    "rust_windows_cli_sbom_sha256": null,
+    "rust_complete_license_notices_sha256": null,
+    "npm_embedded_asset_inventory_sha256": null,
+    "audit_blocker": "No independently reconciled Windows target Rust transitive SBOM and complete crate license/copyright/NOTICE texts; exact embedded JS payload of signed EXE not attested.",
+    "rust_lockfile_workspace_entries": 659
   }
 }

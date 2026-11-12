@@ -9,6 +9,7 @@ on:
       - 'tests/g4/**'
       - 'packaging/**'
       - 'docs/G4_1_INTERNAL_WINDOWS_ZIP.md'
+      - 'docs/G4_2_ACTIONS_ARTIFACT.md'
       - 'README.md'
       - '.github/workflows/g4-1-private-zip.yml'
   workflow_dispatch:
@@ -127,6 +128,21 @@ jobs:
           ('G4_OFFICIAL_ARCHIVE=' + $archive) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           ('G4_VERIFIED_LLMFIT_EXE=' + $exe) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Write-Host 'G4_1_OFFICIAL_SOURCE=PASS VERSION=1.1.20 AUTHENTICODE=Valid ARCHIVE_BYTES=6878103'
+      - name: Checkout tagged upstream llmfit source for read-only Windows CLI audit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: AlexsJones/llmfit
+          ref: bb5771394e88e352c266f4bf8bdb7a5295a998a8
+          path: llmfit-audit-source
+          persist-credentials: false
+      - name: Reconstruct Windows CLI Rust normal/build dependency graph, npm production scope
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $audit = Join-Path $env:RUNNER_TEMP 'g4.2-windows-cli-source-audit.json'
+          python tests/g4/audit_llmfit_windows_cli.py --upstream llmfit-audit-source --output $audit
+          if ($LASTEXITCODE -ne 0) { throw 'G4_2_TARGET_CLI_AUDIT_FAILED' }
+          ('G4_LLMFIT_TARGET_AUDIT=' + $audit) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Build standalone Win x64 Neurometr.exe in private runner temp
         shell: pwsh
         run: |
@@ -216,7 +232,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          python tests/g4/publication_gate.py --policy packaging/public_artifact_gate.json --output $env:GITHUB_OUTPUT
+          python tests/g4/publication_gate.py --policy packaging/public_artifact_gate.json --rust-audit-report $env:G4_LLMFIT_TARGET_AUDIT --output $env:GITHUB_OUTPUT
           if ($LASTEXITCODE -ne 0) { throw 'G4_2_PUBLICATION_GATE_ERROR' }
       - name: Validate user-facing redistribution labels only if license audit is approved
         if: steps.license_gate.outputs.approved == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
