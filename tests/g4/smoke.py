@@ -98,8 +98,8 @@ def run_report(exe,workdir,prior=None):
 def integrity_checks(package,archive,official):
     manifest_path=package/"release-manifest.json"
     manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
-    fail(manifest["format"]=="neurometr.g4.1.internal-inventory","unexpected manifest format")
-    fail(manifest["distribution"]=="internal-ci-only-not-for-publication","manifest wrongly declares a released package")
+    fail(manifest["format"]=="neurometr.g4.2.test-inventory","unexpected manifest format")
+    fail(manifest["distribution"]=="user-qa-distribution","unexpected package distribution mode")
     fail(manifest["llmfit_version"]=="1.1.20","wrong llmfit version")
     fail(manifest["catalog_version"]=="2026.11.11.2","unexpected catalog")
     fail(manifest["catalog_sha256"]==EXPECTED_CATALOG,"catalog not pinned")
@@ -151,7 +151,7 @@ def negative_zip_integrity(archive):
                 if kind=="file_digest" and info.filename==root+"README_RU.txt":
                     raw=raw+b"\nMUTATED\n"
                 if kind=="manifest_metadata" and info.filename==root+"release-manifest.json":
-                    raw=raw.replace(b"internal-ci-only-not-for-publication",b"public-release",1)
+                    raw=raw.replace(b"user-qa-distribution",b"public-release",1)
                 out.writestr(info,raw)
             if kind=="traversal":
                 out.writestr(root+"../outside-private-check.txt",b"would be unsafe")

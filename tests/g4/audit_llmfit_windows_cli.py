@@ -22,6 +22,8 @@ def command(args, cwd):
 def tree_packages(text):
     packages = set()
     for line in text.splitlines():
+        if not line.strip() or line.strip().startswith("["):
+            continue
         m = re.fullmatch(r"([A-Za-z0-9_-]+) v(\d+\.\d+\.\d+(?:[-+][^\s]+)?)(?: \(.+\))?", line.strip())
         if not m:
             raise ValueError("unrecognized cargo tree line: " + line[:120])
