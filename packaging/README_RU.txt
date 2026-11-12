@@ -3,7 +3,8 @@
 СТАТУС: ТЕСТОВЫЙ БИНАРНЫЙ КОМПЛЕКТ, НЕ GITHUB RELEASE
 Права владельца позволяют выдавать эту тестовую сборку через публичные
 GitHub Actions artifacts ПОСЛЕ прохождения лицензионного gate на main.
-Пока gate сообщает BLOCKED, никакой пользовательский ZIP не публикуется.
+Публикация возможна только при LEGAL_COMPLIANCE=PASS, OWNER_RISK_ACCEPTANCE=APPROVED
+и успешном CI на main. Из PR/feature-веток ZIP не публикуется.
 Условия: DISTRIBUTION_TERMS_RU.txt. Лицензия исходного кода Agent не назначена.
 
 Порядок использования проверенной сборки:
@@ -33,4 +34,7 @@ Bundled-каталог 2026.11.11.2, диагностический контра
 DATA_SOURCE_ATTRIBUTION_RU.txt. Обязательные лицензии/атрибуции:
 THIRD_PARTY_NOTICES_RU.txt и LICENSES/.
 LLMFIT_WINDOWS_CLI_AUDIT_RU.txt отдельно объясняет границы реконструкции.
+BINARY_PROVENANCE=NOT_VERIFIED: владелец принял риск происхождения подписанного
+llmfit.exe только для тестовых комплектов, см. G4_2_OWNER_RISK_ACCEPTANCE_RU.txt.
+Исходники MPL-2.0 и их SHA-256 указаны в THIRD_PARTY_NOTICES_RU.txt.
 release-manifest.json содержит размеры/SHA-256, но НЕ подпись издателя.

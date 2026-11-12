@@ -236,4 +236,4 @@ END_COMPONENTS
 Отдельные критические случаи: colored@3.1.1 и option-ext@0.2.0 MPL-2.0;
 ring@0.17.14 Apache-2.0 AND ISC; unicode-ident@1.0.24
 (MIT OR Apache-2.0) AND Unicode-3.0; matchit@0.8.4 MIT AND BSD-3-Clause.
-Файлы лицензий/NOTICE в источниках не скопированы для 215 crates. Gate BLOCKED.
+Доступные оригинальные файлы LICENSE/NOTICE/COPYRIGHT (366 файлов на CI G4.2) собираются из pinned crate source и включаются в ZIP вместе с supplemental upstream LICENSE. SOURCE RECONSTRUCTION не является аттестованным бинарным SBOM; юридическое покрытие проверяет отдельный CI legal gate.
