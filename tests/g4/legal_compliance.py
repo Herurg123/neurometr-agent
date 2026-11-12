@@ -239,7 +239,10 @@ def check_source_audit(root, report, license_bundle):
     require(sha(license_bundle.encode("utf-8")) ==
             report.get("rust_source_license_bundle_sha256"),
             "source notices aggregate SHA mismatch")
-    inventory = checked_file(root, "packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt").decode("utf-8")
+    inventory = checked_file(root, "packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt").decode("utf-8").replace("\r\n", "\n")
+    require(inventory.count("BEGIN_COMPONENTS\n") == 1 and
+            inventory.count("\nEND_COMPONENTS") == 1,
+            "pinned component inventory markers missing")
     lines = inventory.split("BEGIN_COMPONENTS\n", 1)[1].split("\nEND_COMPONENTS", 1)[0].splitlines()
     require(lines == expected_lines, "pinned component inventory mismatch")
     require({(p["name"], p["version"]) for p in report.get("npm_production_packages", [])}
