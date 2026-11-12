@@ -84,29 +84,25 @@ def local_external_dial_denied(url):
         finally:conn.close()
     print("A3_4_EXTERNAL_INTERFACE=DENIED")
 
-def verify_acl(directory):
-    # Independent real Windows ACL audit, comparing well-known SIDs rather
-    # than locale-dependent trustee names. No trustee names/paths are logged.
-    script=(
-      "$ErrorActionPreference='Stop';"
-      "$p=Join-Path $env:LOCALAPPDATA 'Neurometr\history';"
-      "$acl=Get-Acl -LiteralPath $p;"
-      "$blocked=@('S-1-1-0','S-1-5-11','S-1-5-32-545','S-1-5-32-546');"
-      "$bad=$false;"
-      "foreach($ace in $acl.Access){"
-      " if($ace.AccessControlType -ne 'Allow'){continue};"
-      " $sid=$ace.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value;"
-      " if($blocked -contains $sid){$bad=$true}"
-      "};"
-      "if($bad){exit 3};exit 0"
+def verify_acl(directory, runid):
+    # Use native Windows ACL inspection independently from the Go
+    # GetNamedSecurityInfoW/GetAce fail-closed gate. Never print identities,
+    # SIDs, private paths or raw icacls output into public CI logs.
+    expect(directory.is_dir(),"private history directory missing")
+    locations=[directory,directory/(runid+".json")]
+    disallowed=(
+        "everyone:", "builtin\\users:", "authenticated users:",
+        "builtin\\guests:", "s-1-1-0:", "s-1-5-11:", "s-1-5-32-545:",
     )
-    audit=subprocess.run(["powershell.exe","-NoProfile","-NonInteractive","-Command",script],
-        stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15)
-    if audit.returncode!=0:
-        print("A3_4_WINDOWS_ACL_AUDIT=FAIL EXIT="+str(audit.returncode))
-    expect(audit.returncode==0,"Windows history DACL does not meet private-history policy")
-    expect(directory.is_dir(),"history folder missing")
-    print("A3_4_WINDOWS_ACL_AUDIT=PASS")
+    for path in locations:
+        result=subprocess.run(["icacls.exe",str(path)],
+            stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=15)
+        expect(result.returncode==0,"Windows ACL cannot be independently inspected")
+        text=result.stdout.decode("utf-8",errors="replace").lower()
+        expect(not any(name in text for name in disallowed),
+               "Windows history contains a broadly accessible ACL")
+    print("A3_4_WINDOWS_ACL_AUDIT=PASS DIRECTORY_AND_REPORT=PRIVATE")
+
 
 def optional_edge_browser(url):
     # Installed Microsoft Edge/Chromium only; offline, no screenshots, video,
@@ -203,7 +199,7 @@ def main():
         expect(status==200 and exported==raw and "attachment" in hdr.get("Content-Disposition",""),"manual export differs from stored file")
         print("A3_4_NATIVE_WINDOWS=PASS FULL_GO_VALIDATOR=PASS WEB_PYTHON=PASS BUNDLED_REF=PASS NO_LLMFIT=PASS PII=PASS")
         print("A3_4_JSON_BYTES="+str(len(raw))+" GPU_ENTRIES="+str(len(report["hardware"]["gpus"])))
-        verify_acl(dir)
+        verify_acl(dir,runid)
         optional_edge_browser(url)
         # Restart loses cookie/session, but not history. A newly issued session
         # must permit reading the exact same previously validated report.
