@@ -71,7 +71,7 @@ func TestLoopbackSecurityAndHistoryAPI(t *testing.T){
  cookie,csrf:=tokens(t,client,url)
  r:=req(t,client,"GET",url+"api/history",nil,"","",nil)
  if r.StatusCode!=401{t.Fatal("history exposed without session")};closed(r)
- r=req(t,client,"GET",url+"api/history",cookie,"http://attacker.invalid","","",nil)
+ r=req(t,client,"GET",url+"api/history",cookie,"http://attacker.invalid","",nil)
  if r.StatusCode!=403{t.Fatal("cross-origin GET accepted")};closed(r)
  badHost,err:=http.NewRequest("GET",url+"api/history",nil);if err!=nil{t.Fatal(err)}
  badHost.Host="attacker.invalid"
