@@ -1,20 +1,77 @@
-# neurometr-agent
+# Нейрометр: локальная утилита (Agent)
 
-Windows-first Go agent for Neurometr. All A2 development and testing take place in GitHub; the owner does not need a local SDK or development environment.
+**Нейрометр** проверяет возможности компьютера для локального ИИ, строго разделяя обнаруженное, оценённое, измеренное и неизвестное. Локальная утилита разрабатывается на **Go**; первая поддерживаемая платформа — **Windows x64**.
 
-## A1 — approved contract pin, merged into main (G1)
+Проект состоит из **двух связанных репозиториев**:
 
-- Agent PR #1 was merged at commit `6721097cd8771b62b46c7344537a2a748f600e71`. Its `contracts/` directory pins 23 byte-for-byte canonical v0.1.0 files from Web commit `97aa0f4c1ceaef36608288e589b8abe935c5189e`.
-- `contracts/contract.lock.json` contains SHA-256 digests of exact file bytes, source commit and size checks; Git blob identifiers are not content SHA-256.
-- GitHub Actions verifies the contract pin, F01–F08, 23 portable numeric vectors and selected semantic invariants on Windows/Ubuntu.
-- Go A1 validation remains **partial**: it does not fully implement Draft 2020-12 or demonstrate complete equivalence to the canonical Python validator. Full schema and differential validation are required before acceptance of a real diagnostic JSON.
-- F07 trust checks simulate an upstream trust result, not Ed25519. F08 does not prove arbitrary future `llmfit_overrides` field support.
+- [neurometr-agent](https://github.com/Herurg123/neurometr-agent) — локальная диагностика и экспорт JSON (этот репозиторий).
+- [neurometr-web](https://github.com/Herurg123/neurometr-web) — статический сайт, просмотр диагностических файлов, канонические контракты и каталог моделей.
 
-## A2 — llmfit v1.1.20 CLI PoC (Draft PR #2)
+## Текущее состояние
 
-- [A2 reproducibility, official Windows asset, commands, tests and evidence](docs/A2_LLMFIT_POC.md). Source code and cloud tests are limited to the pinned `llmfit v1.1.20` and a controlled Go child process.
-- The official Windows runner has confirmed **limited** `LLMFIT_CUSTOM_MODELS` effects on synthetic model fit and ranking. The live regression test now **fails** rather than merely logging when model loading, fit changes or ranking reversal are absent.
-- **Raw llmfit stdout is capped at 8 MiB**, stderr at 256 KiB. The normative final `diagnostic.json` is capped separately at **2 MiB**. An oversized full `list --json` is rejected with `output_too_large` and must not be a required step of fast diagnostics.
-- `Run()` defaults to a **30-second total timeout** when not explicitly overridden; previous official Windows CI required approximately **50–60 seconds** for `system`, `fit` and `recommend` using longer test-specific deadlines. This is a **blocking performance risk for later fast-diagnostics acceptance**, not for the bounded CLI PoC. Timeouts are not globally increased.
+В основной ветке реализованы нативный сбор Windows CPU/RAM/GPU, обработка частичных ошибок и **обычный офлайн-экспорт диагностического JSON v0.1.0** с проверенным комплектным каталогом. Обязательного запуска llmfit и подключения к сети для быстрой аппаратной диагностики нет. Результат проходит JSON Schema Draft 2020-12 и семантические проверки.
 
-No Agent archive, hardware diagnostics, localhost UI, remote catalog update, release or deployment is authorized by A2. PR #2 remains Draft; merge requires separate owner approval.
+**Ещё нет готового пользовательского продукта:** защищённый localhost UI, история отчётов и единый Windows ZIP с вложенным llmfit пока не реализованы. Модели из каталога не загружаются автоматически; их реальная работа и TPS не проверялись.
+
+## История реализации: от нового к старому
+
+### A3.3. Доверенный офлайн-каталог и обычный экспорт
+
+[PR #5](https://github.com/Herurg123/neurometr-agent/pull/5) объединён в main: коммит **f63d38fa8018572f570d60f6bf652ee2bb7e64c3**.
+
+- Добавлен комплектный каталог версии **2026.11.11.2**, две модели Qwen и два GGUF-артефакта, без весов.
+- Точные байты закреплены по утверждённому Web commit, размеру **6589 байт** и SHA-256 **1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2**.
+- Обычный диагностический JSON использует только доверенный комплектный каталог: catalog_ref.origin = bundled. Подмена каталога приводит к контролируемому отказу без отчёта.
+- [CI](https://github.com/Herurg123/neurometr-agent/actions/runs/43092067660): **3/3 PASS**, включая настоящий Windows runner и валидацию Go/Python.
+- Доверие основано на закреплённых офлайн-байтах, **не** на подписи удалённого издателя. [Документация A3.3](docs/A3_3_BUNDLED_CATALOG.md).
+
+### A3.2. Нативная аппаратная диагностика Windows
+
+[PR #4](https://github.com/Herurg123/neurometr-agent/pull/4) объединён: коммит **4117ceadee1ac498ab22c175060848ec54b35504**.
+
+- Windows API: ОС, CPU, физическая и доступная RAM, DXGI-адаптеры.
+- Неизвестная VRAM остаётся неизвестной; отсутствие проверки NPU не выдаётся за отсутствие устройства.
+- Частичные результаты и структурированные ошибки сохраняются при отказах необязательных компонентов. [Документация A3.2](docs/A3_2_NATIVE_DIAGNOSTIC.md).
+
+### A3.1. Полный Go-валидатор
+
+[PR #3](https://github.com/Herurg123/neurometr-agent/pull/3) объединён: коммит **21c6fa44a235fcda793791d0de373b6e23e22131**.
+
+- Полная проверка канонических JSON Schema Draft 2020-12, форматов, строгого числового профиля и семантических инвариантов.
+- **82/82** совпадения Go/Python на проверенном корпусе в Ubuntu/Windows; полная эквивалентность на любых JSON не утверждается.
+- Зафиксирован риск длительных вызовов llmfit (примерно 50–60 секунд на облачном Windows runner при стандартном тайм-ауте 30 секунд). [Документация A3.1](docs/A3_1_VALIDATION_AND_LATENCY.md).
+
+### A2. Проверка llmfit CLI
+
+[PR #2](https://github.com/Herurg123/neurometr-agent/pull/2) объединён: коммит **f5e6b4a61fbda5764f6f831c3dfeae18ac7901af**.
+
+- Закреплён **llmfit CLI v1.1.20** с запуском через управляемый дочерний процесс Go, ограничением времени и объёма вывода.
+- Live CI подтвердил ограниченное влияние LLMFIT_CUSTOM_MODELS на синтетические расчёты fit и ранжирования, **не** измеренный GPU TPS и не запуск модели. [Документация A2](docs/A2_LLMFIT_POC.md).
+
+### A1. Закрепление канонических контрактов
+
+[PR #1](https://github.com/Herurg123/neurometr-agent/pull/1) объединён: коммит **6721097cd8771b62b46c7344537a2a748f600e71**.
+
+- Каталог [contracts/](contracts/) содержит pin-копию канонических схем и F01–F08 из [Web](https://github.com/Herurg123/neurometr-web/tree/main/contracts), с SHA-256 и исходным коммитом.
+- Первоначальная частичная валидация A1 дополнена полноценным валидатором на этапе A3.1.
+
+## Проверка исходников
+
+Сборка и тесты выполняются преимущественно в **GitHub Actions**. Для разработчика с установленным Go на Windows x64 доступен тестовый CLI:
+
+~~~powershell
+go run ./cmd/contractcheck -root .
+go run ./cmd/catalogcheck -root .
+go run ./cmd/diagnose -root . -output diagnostic.json
+~~~
+
+Это **не** инструкция владельцу устанавливать Go. Для конечного пользователя предусмотрен отдельный готовый ZIP, его выпуск пока не состоялся. Диагностический файл нужно считать приватным до проверки на персональные сведения.
+
+## Ограничения и безопасность
+
+- Факт обнаружения GPU/runtime не означает, что ускорение или модель работают.
+- GPU/SYCL, NPU, измеренный TPS, реальные модели и оборудование владельца не испытывались.
+- Удалённые обновления каталога с Ed25519 и пользовательская поставка пока не реализованы.
+- Не передавать диагностический JSON на сервер автоматически; не выводить неизвестное как 0 или оценку как измерение.
+
+**Правило документации:** поддерживать этот README актуальным при существенных изменениях в том же PR; историю размещать от самого нового этапа к самому старому.
