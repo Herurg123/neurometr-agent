@@ -1,93 +1,99 @@
-# G4.2 — скачиваемый Windows x64 ZIP из GitHub Actions (лицензионная блокировка)
+# G4.2 — тестовый Windows x64 ZIP через GitHub Actions, только main
 
-**Статус:** ограниченный Draft PR в `neurometr-agent`. Изменения не объединены. Владелец разрешил потенциальную публичную доступность **только Actions artifact** (не GitHub Release); дополнительных репозиториев и серверов нет. Однако **автоматическая публикация остаётся заблокированной** до документальной проверки условий распространения.
+**Статус:** Draft PR #9; не объединён. Утверждено владельцем 12.11.2026:
+допустимы тестовые Windows x64 бинарные комплекты через GitHub Actions
+artifacts с официальным подписанным llmfit v1.1.20 при соблюдении сторонних
+лицензий и документированном остаточном binary provenance риске.
+Запрещены merge без отдельного согласия, GitHub Release, deployment,
+коммерческая поставка и OSS-лицензирование собственного Agent.
 
-## Утверждённый baseline и источники
+## Три независимых решения
 
-- Agent `main` при начале этапа: `dbdd5984823be88eacc407046af12cd86e8d154f`, объединённый G4.1 PR #8.
-- [G4.1 CI #43260151749](https://github.com/Herurg123/neurometr-agent/actions/runs/43260151749): 3/3 PASS на этом точном merge commit, внутренний ZIP **12 843 925 байт**, SHA-256 `df5b8351be89449d3e554c0cc6120d9ff741fcd4ce834f980c9a7033953527a1`. Контрольная сумма относится **только к указанному commit**, не к будущему ZIP.
-- llmfit v1.1.20: официальный GitHub release `AlexsJones/llmfit`; ZIP Windows x64 ровно **6 878 103 байта**, SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`. Текущий CI проверяет Authenticode `Valid` и `llmfit 1.1.20`.
-- Diagnostic v0.1.0, исходные canonical contracts и bundled-каталог `2026.11.11.2` с SHA-256 `1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2` **не менялись**.
+1. **LEGAL_COMPLIANCE=PASS** только после проверки в CI применимых Rust/npm
+   лицензий, оригинальных copyright/NOTICE, составных SPDX AND, MPL-2.0
+   §3.2 source по HTTPS/SHA, MIT/Apache перехода rmcp и полных текстов.
+2. **BINARY_PROVENANCE=NOT_VERIFIED** всегда: реконструкция source Cargo
+   closure не является независимым binary SBOM для подписанного llmfit.exe,
+   не доказывает активные features и встроенные npm/JS ресурсы.
+3. **OWNER_RISK_ACCEPTANCE=APPROVED**: владелец принял этот конкретный
+   остаточный риск исключительно для тестовых GitHub Actions artifacts.
+   Документ: packaging/G4_2_OWNER_RISK_ACCEPTANCE_RU.txt.
 
-## Маршрут скачиваемого artifact
+**PUBLIC_ARTIFACT_GATE=APPROVED** только на main после полного успешного CI
+и юридического evidence PASS. Из PR и feature-веток upload запрещён всегда.
 
-Существующий `.github/workflows/g4-1-private-zip.yml` расширяется:
+## Проверяемые исходники и лицензии
 
-1. `push` только в `main`; `workflow_dispatch` можно вызывать, но публикация разрешена **только** при ref `refs/heads/main`; `pull_request` продолжает выполнять полный тест, **никогда не публикуя** ZIP.
-2. После Go-матрицы Ubuntu/Windows выполняется Windows 2025 job: checkout **точного** исходного commit, pin Web-oracle, проверка официального llmfit (размер/SHA/подпись/версия), автономная Go-сборка, два детерминированных ZIP, `g4pack verify`, безопасная распаковка и полная проверка manifest / canonical pin / bundled-каталога.
-3. Реальный Windows smoke на распакованном комплекте: localhost Host/Origin/CSRF, native CPU/RAM/GPU, Go FullValidator и независимый Python Web, история между запусками, экспорт, 6 негативных ZIP-сценариев, отсутствие llmfit как обязательной зависимости. Отчёты с приватными аппаратными данными не загружаются.
-4. В частном `RUNNER_TEMP` формируется папка **ровно из двух файлов**: `Neurometr-Windows-x64-<sha>.zip` и `SHA256SUMS.txt`, строка `<sha256> *Neurometr-Windows-x64-<sha>.zip`. Отдельный `check_download_payload.py` проверяет имена, SHA, содержимое ZIP/manifest, запрет скрытых/служебных/секретных файлов и отсутствие лишнего материала. `SHA256SUMS.txt` относится к **внутреннему ZIP приложения**, не к внешнему контейнеру GitHub Actions.
-5. `publication_gate.py` проверяет событие, ref, точный checkout и `packaging/public_artifact_gate.json`. Политика **сейчас `blocked`** по оставшемуся Rust/notices и невозможности независимо аттестовать точный состав подписанного llmfit EXE. Решения владельца о тестовом бинарнике Agent, атрибуции контрактов и каталога уже зафиксированы. При блокировке CI остаётся зелёным после успешных тестов, но `upload-artifact` не вызывается.
-6. Если **в будущем** все лицензионные требования будут подтверждены через отдельное согласованное изменение policy, дополнительно проверяется пользовательская маркировка ZIP/notice. Нельзя распространять ZIP со старым `internal-ci-only-not-for-publication`. Только после этого разрешён `actions/upload-artifact` на `main`; action закреплён по SHA `ea165f8d65b6e75b540449e92b4886f43607fa02` (v4.6.2), **retention 14 дней**, `include-hidden-files=false`, `if-no-files-found=error`, имя `neurometr-windows-x64-<sha>`. Никакого GitHub Release.
-7. В GitHub Actions Summary выводятся фактические commit SHA, ZIP-имя, **размер**, SHA-256, версия llmfit, статус smoke и либо ссылка на реально выгруженный artifact, либо однозначный статус `BLOCKED`. Папка staging и временные ZIP удаляются с runner.
+- Официальный llmfit v1.1.20 Windows x64 ZIP 6 878 103 байта, SHA-256
+  1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489.
+  CI проверяет actual ZIP size/SHA, Authenticode Valid и --version 1.1.20.
+- Закреплённый llmfit commit bb5771394e88e352c266f4bf8bdb7a5295a998a8.
+  Для Windows MSVC x64 CLI целевой Cargo normal/build default features
+  closure = 215 source packages из 659 workspace Cargo.lock records.
+  На предыдущем CI захвачено 366 оригинальных Rust LICENSE/NOTICE-like
+  файлов, сохранены имена, лицензии/SPDX, содержимое и SHA исходника.
+- Пять crates без стандартного LICENSE/NOTICE файла: clipboard-win@5.4.1
+  (upstream BSL), rmcp@3.5.1 и rmcp-macros@3.5.1 (MIT+Apache),
+  llmfit@1.1.20 и llmfit-core@1.1.20 (root MIT).
+  Отсутствие файла в crate НЕ равно отсутствию лицензии.
+- MPL-2.0: colored@3.1.1 и option-ext@0.2.0 соответствующие source .crate
+  доступны бесплатно, точные HTTPS URL и Cargo.lock SHA опубликованы в
+  packaging/THIRD_PARTY_NOTICES_RU.txt; CI их загружает и сверяет SHA.
+  Полный MPL-текст и права получателей сохраняются.
+- Составные лицензии ring (Apache-2.0 AND ISC), matchit (MIT AND BSD-3),
+  unicode-ident ((MIT OR Apache-2.0) AND Unicode-3.0) проверяются особо.
+  Пять npm production MIT пакетов react/react-dom/scheduler/js-tokens/
+  loose-envify проверяются по source lockfile и отдельным copyright текстам.
+  Источник списка — НЕ binary SBOM.
+- Контракты diagnostic v0.1.0 и bundled-каталог 2026.11.11.2,
+  SHA 1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2,
+  остаются прежними. Веса моделей не включены.
 
-**Fail-closed гарантии:** PR/feature/не-main dispatch никогда не публикуют архив, даже при гипотетически одобренной лицензии; несовпадение source SHA и manifest блокирует сборку. Любой сбой тестов отключает upload. Текущий `blocked` policy означает ноль опубликованных ZIP в этой ветке.
+## CI до разрешённого merge
 
-## Лицензии и незакрытые условия распространения
+Workflow .github/workflows/g4-1-private-zip.yml:
 
-**Факт:** полные тексты `llmfit-MIT.txt`, `jsonschema-Apache-2.0.txt`, `golang-x-text-BSD-3-Clause.txt`, `go-toolchain-BSD-3-Clause.txt` уже входят в комплект G4.1. GitHub upstream `llmfit@v1.1.20` объявляет MIT для workspace. У upstream отсутствует очевидный комплект с полными транзитивными notices в дереве исходников (видны `LICENSE` и лицензия python-компонента).
+1. Go матрица Ubuntu/Windows: go test -v -count=1 ./..., go vet,
+   contractcheck, catalogcheck и hostile ZIP unit tests.
+2. На настоящем Windows 2025 runner: точный Agent source SHA, frozen
+   read-only Web Python oracle, скачивание official pinned llmfit ZIP,
+   проверка Authenticode/SHA/size/version.
+3. Checkout pinned llmfit source: cargo tree/metadata, npm lockfile,
+   проверка 215-entry inventory, упаковка оригинальных Rust notices;
+   юридический аудит с 2 MPL .crate HTTPS + pinned source archive SHA.
+4. Standalone Neurometr.exe без CGO; два byte-identical ZIP; g4pack verify,
+   безопасная распаковка с пробелами, проверка manifest SHA и pin
+   контрактов/каталога; localhost/native Windows smoke, история и экспорт,
+   независимый Python oracle и шесть негативных ZIP-сценариев.
+5. В частном RUNNER_TEMP подготовка ровно двух файлов:
+   Neurometr-Windows-x64-<commit>.zip и SHA256SUMS.txt. Проверяется
+   check_download_payload.py --public. release-manifest.json содержит SHA
+   каждого файла, но не является цифровой подписью.
+6. publication_gate.py повторно проверяет source/license evidence и
+   owner risk document; только successful main push/main dispatch может
+   перейти в approved. Никакие PR не загружают artifacts.
+7. Только после успешного gate upload-artifact выдаёт один Actions artifact
+   с двумя файлами, retention 14 дней. Actions Summary содержит commit,
+   фактический ZIP SHA/размер, три статуса и настоящую ссылку либо BLOCKED.
 
-**Блокер 1: Rust dependencies/notices.** Windows CI построил целевой граф **215 package/version**, включая normal и build edges, и зафиксировал SPDX и доступные имена notice. Полный перечень: `packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt`, проверяется на расхождение с Cargo при каждом CI. **Не хватает полных copyright/NOTICE/license texts для применимых crates, включая MPL-2.0 и составные лицензии.** Точный граф официального подписанного EXE независимо не аттестован.
+## Скачивание после разрешённого merge
 
-**Подтверждено 2: права Agent.** Владелец разрешил тестовые бинарные комплекты через публичные Actions artifacts; решение записано в `packaging/DISTRIBUTION_TERMS_RU.txt`. Исходный код Agent остаётся без назначенной open-source лицензии; это не разрешает Release или коммерческую поставку.
+Откройте https://github.com/Herurg123/neurometr-agent/actions/workflows/g4-1-private-zip.yml
+и выберите успешный main run с реальной ссылкой на artifact. Внешний ZIP
+GitHub содержит внутренний application ZIP и SHA256SUMS.txt.
+Проверить внутренний ZIP SHA-256 в PowerShell:
+Get-FileHash -Algorithm SHA256 -LiteralPath '.\Neurometr-Windows-x64-<commit>.zip'
+При несовпадении не запускать; затем распаковать ZIP приложения и запустить
+Neurometr.exe без SDK. Не отключать SmartScreen/Defender.
 
-**Подтверждено 3: контракты и каталог.** Агент включает проектную pin-копию схем и каталог метаданных двух Qwen GGUF по сохранённым commit/SHA; веса, модельные карточки и пользовательские данные не включены. Источники и Apache-2.0 Qwen отмечены в `DATA_SOURCE_ATTRIBUTION_RU.txt`. HTTPS/Ed25519 remote catalog остаётся отдельной задачей.
+## Не проверялось
 
-**Подтверждено 4: маркировка ZIP.** G4.2 manifest содержит `user-qa-distribution` и `neurometr.g4.2.test-inventory`, а `check_download_payload.py --public` прошёл на текущем Windows CI. Это не GitHub Release; инвентарный manifest с SHA-256 не является подписью издателя.
+Независимый Rust binary graph/attestation, состав встроенного JS,
+пользовательские ПК, GPU/SYCL/NPU, реальные запуски весов/TPS и cloud.
+Подпись upstream llmfit не равна подписи собственного Neurometr.exe;
+локальная история в профиле пользователя не зашифрована.
+E4 CPU-only нельзя сопоставлять с GPU/SYCL прогнозом.
 
-Политика в `packaging/public_artifact_gate.json` устанавливает `status=blocked`; в текущем PR можно закрывать доказательные лицензионные требования, но переключать на `approved` без подтверждения нельзя. **Нельзя делать публикацию вручную в обход этого gate**.
-
-## Как пользователь скачает файл после лицензионного допуска
-
-1. Открыть [Agent → Actions → G4.1/G4.2 Windows ZIP](https://github.com/Herurg123/neurometr-agent/actions/workflows/g4-1-private-zip.yml).
-2. Выбрать успешный запуск на `main`. На странице Summary проверить `Source commit`, `ZIP size`, `SHA-256`, `Windows smoke=PASS`; если указано `BLOCKED`, ZIP скачивать нельзя.
-3. В секции **Artifacts** скачать `neurometr-windows-x64-<commit>`. GitHub отдаёт **внешний ZIP-контейнер артефакта**: сначала распаковать его, затем найти **внутренний ZIP приложения** и `SHA256SUMS.txt`.
-4. Убедиться, что имя внутреннего файла `Neurometr-Windows-x64-<commit>.zip` соответствует Summary. Проверить его SHA-256 стандартным PowerShell без установки SDK:
-   ```powershell
-   Get-FileHash -Algorithm SHA256 -LiteralPath '.\Neurometr-Windows-x64-<commit>.zip'
-   ```
-   Полученные 64 hex-символа (регистр не важен) должны точно совпасть с `SHA256SUMS.txt` и Summary. При расхождении **не запускать**.
-5. Распаковать внутренний ZIP в личную папку с пробелами, запустить `Neurometr.exe` без прав администратора. Для отдельного QA-чата **строго одно действие за раз**; не выключать Defender/SmartScreen, не отправлять сырые диагностические JSON.
-
-## Что не тестировалось
-
-Нет конечной лицензионной приёмки и нет разрешения обходить текущую блокировку; публичного скачиваемого ZIP до выполнения условий не будет. Работа на реальном ПК владельца, SmartScreen/Defender, конкретные GPU/NPU, модели, TPS, cloud checks и права текущего пользователя Windows не подтверждены облачным runner. История локальна и не шифруется.
-
-## Контроль результата PR
-
-После CI указать commit HEAD, ссылки Go+Windows jobs, подтверждённый `NO_ARTIFACT_UPLOAD`, SHA/размер внутреннего ZIP, список diff, `main` и Draft PR. **Merge только по отдельному решению оркестратора.**
-
-
-## G4.2 — обновление аудита после решения владельца от 12.11.2026 (Draft)
-
-Владелец **разрешил тестовые бинарные комплекты через публичные GitHub Actions artifacts**, без публикации исходного кода, OSS-лицензии или GitHub Release. В пакет теперь входят `DISTRIBUTION_TERMS_RU.txt`, `DATA_SOURCE_ATTRIBUTION_RU.txt`, `LLMFIT_WINDOWS_CLI_AUDIT_RU.txt` и подтверждённые полные MIT-тексты для пяти npm production packages. Manifest тестовой сборки использует `user-qa-distribution`, а не прежнюю внутреннюю маркировку.
-
-Восстановлена **точная целевая область**: `llmfit` (TUI/CLI) + `llmfit-core`, Windows `x86_64-pc-windows-msvc`, Rust normal/build edges и default features. Dev-dependencies и `llmfit-desktop` не учитываются как runtime CLI. В upstream release recipe **сначала** выполняются `npm ci` и `npm run build`, затем Rust build: JS/CSS могут встраиваться в подписанный EXE через `build.rs`. Нельзя считать 659 записей всего `Cargo.lock` списком лицензий CLI.
-
-В CI предусмотрено независимое чтение **точного upstream commit**, `cargo tree --locked --target ... --edges normal,build --package llmfit`, `cargo metadata --locked --filter-platform ...` и npm lockfile. Скрипт печатает разрешённый перечень Rust компонентов с версиями, SPDX и доступными license/NOTICE filename; полный отчёт сохраняется только во временном каталоге CI. Это целевая **реконструкция исходников**, не доказательство идентичного кода в официальном подписанном EXE.
-
-**Открытый блокер:** полный Rust transitive SBOM и обязательные copyright/NOTICE/полные лицензионные тексты ещё не подтверждены и не включены в комплект, upstream подписанный EXE не даёт собственной сборочной аттестации содержимого Rust и npm dist. Поэтому `public_artifact_gate.json` остаётся `blocked`. Простая подмена строк `approved` или фиктивных SHA не пройдёт gate: нужны актуальный проверенный Cargo-отчёт на Windows runner, совпадающий с закреплённым SBOM, а также полный реестр и тексты notices. Сам ZIP теперь проходит публичную проверку маркировки в PR без публикации из PR.
-
-**Примечание к Windows smoke:** negative `manifest_metadata` меняет именно значение `user-qa-distribution` на недопустимое `public-release`; проверка manifest формата и распределения синхронизирована с G4.2. Шесть hostile-ZIP сценариев должны оставаться активными.
-
-
-## Проверенное target-исследование на Windows CI
-
-[CI #43273311334](https://github.com/Herurg123/neurometr-agent/actions/runs/43273311334): Rust Cargo normal/build target closure = **215** записей; npm production = **5**, источники pinned, pull-only. В составе присутствуют лицензии MPL-2.0, BSL-1.0, Zlib, ISC, BSD-3-Clause и составные `AND`/Unicode-3.0 наряду с MIT/Apache. Реальный signed EXE всё ещё не снабжён сопоставимым upstream build attestation. Список 215 записей сохраняется в `packaging/LLMFIT_WINDOWS_CLI_COMPONENTS_RU.txt` и в архиве, сверяется со свежим Cargo graph на Windows runner. Это не утверждение об исполнении Rust SDK пользователем.
-
-
-**Упаковка исходных Rust notices:** в Windows CI по подтверждённому Cargo.lock извлекаются оригинальные LICENSE/NOTICE-like файлы из source crate archives и детерминированно объединяются с названиями/version/SPDX и SHA каждого исходного файла в `LICENSES/rust-cli-source-license-texts.txt`. Файл добавляется в ZIP и его SHA фиксируется в package manifest. Это сокращает объём недостающих лицензионных текстов, но не легализует недостающие crate notices автоматически: `clipboard-win`, `rmcp`, `rmcp-macros` не содержат найденных стандартных notice-файлов; у llmfit/core действует отдельный upstream MIT. `public_artifact_gate` остаётся `blocked`, пока не подтверждены все обязательства и точная связь с официальным EXE.
-
-
-**Исправление Apache-2.0:** историческая upstream копия лицензии `jsonschema` обрывалась в конце Section 9. В G4.2 заменена полным стандартным текстом Apache Software Foundation (включая END OF TERMS и APPENDIX) из официального Apache-репозитория. ZIP smoke требует маркеры полной лицензии. Для Qwen 0.5B/1.5B добавлено copyright `Alibaba Cloud (2024)` из их LICENSE, веса моделей отсутствуют.
-
-
-**Дополнение исходных лицензий:** upstream `clipboard-win` BSL-1.0 сохранён из закреплённого commit `ed27008...` (более поздний master 5.4.3, не tag исходного crate 5.4.1); `rmcp`/`rmcp-macros` используют общий upstream LICENSE тега `rmcp-v3.5.1`, который явно сохраняет MIT для ранее не перелицензированных contributions при переходе на Apache-2.0. Оба полных файла находятся в `LICENSES/` ZIP. Отличать наличие полного текста от полного coverage copyright и аттестации фактического бинарного EXE.
-
-
-### Точность upstream источников BSL и MCP
-
-- `clipboard-win 5.4.1`: [commit исходников версии 5.4.1](https://github.com/DoumanAsh/clipboard-win/commit/3b27cf2bfd1adcfa6e0264eb51c1025ddaf0f342) содержит `Cargo.toml version = 5.4.1` и `LICENSE` BSL-1.0; полный текст идентичен добавленному. Отсутствие LICENSE внутри `.crate` связано с `include` upstream, а не отсутствием лицензии.
-- `rmcp 3.5.1` и `rmcp-macros 3.5.1`: тег `rmcp-v3.5.1` указывает на commit `79437f291b2c44053d00dcd5db969fd0cca7c887`; корневой LICENSE совпадает с копией в ZIP, однако прямо различает старые MIT contributions и новые Apache-2.0. Установить применимые права только по строке SPDX нельзя.
-
-**Остаточное ограничение:** выдача официального подписанного llmfit Windows EXE без исходной build attestation не позволяет утверждать, что реконструкция Rust/npm идентична бинарнику. Статус gate остаётся `blocked`.
+После CI оркестратор получает точный HEAD, job/run ссылки, исходные SHA,
+успешность юридического аудита и количество PR artifacts (ожидается 0).
+Merge в main только по отдельному разрешению.
