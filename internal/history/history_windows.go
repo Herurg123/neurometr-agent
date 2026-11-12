@@ -39,11 +39,17 @@ func utf16(s string)*uint16{
 }
 func sidString(sid uintptr)(string,error){
  if sid==0{return "",ErrUnavailable}
- var s uintptr
- r,_,_:=sidToString.Call(sid,uintptr(unsafe.Pointer(&s)))
- if r==0||s==0{return "",ErrUnavailable}
- defer localFree.Call(s)
- return syscall.UTF16PtrToString((*uint16)(unsafe.Pointer(s))),nil
+ var value unsafe.Pointer
+ r,_,_:=sidToString.Call(sid,uintptr(unsafe.Pointer(&value)))
+ if r==0||value==nil{return "",ErrUnavailable}
+ defer localFree.Call(uintptr(value))
+ // ConvertSidToStringSidW always returns a short NUL-terminated string.
+ // Do not expose its raw pointer or any SID in diagnostic HTTP/log output.
+ chars:=unsafe.Slice((*uint16)(value),256)
+ for i,ch:=range chars{
+  if ch==0{return syscall.UTF16ToString(chars[:i]),nil}
+ }
+ return "",ErrUnavailable
 }
 func currentSID()(string,error){
  proc,_,_:=getCurrentProcess.Call()
