@@ -45,6 +45,12 @@ Neurometr-Windows-x64/
 - Contracts: `contract.VerifyPin` из зафиксированного Web commit `97aa0f4c1ceaef36608288e589b8abe935c5189e`; схема diagnostic `0.1.0`; копируются все canonical файлы и `contracts/contract.lock.json` без переписывания. FullValidator собирается из физически распакованного комплекта.
 - Catalog: `bundled/catalog.json` версия `2026.11.11.2`, **6589 байт**, SHA-256 `1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2`. Сверяется через `catalogpin.Verify`, полный Go validator, lock и байтовый pin. Никаких network updates/Ed25519 remote manifest.
 
+## G4.1 supply-chain provenance: проверка фактического checkout
+
+**Обязательное правило Windows packaging job:** `actions/checkout` использует **точный SHA PR HEAD** — `${{ github.event.pull_request.head.sha || github.sha }}`, а не автоматически синтезированный GitHub `refs/pull/*/merge`. До получения llmfit, компиляции EXE и упаковки workflow выполняет `git rev-parse HEAD`, сравнивает его с `G4_EXPECTED_SOURCE_COMMIT` и **fail closed** при расхождении. Проверенный SHA экспортируется как `G4_VERIFIED_CHECKOUT_COMMIT` и передаётся в обе команды `g4pack pack -source-commit`. После распаковки `release-manifest.json.agent_source_commit` **отдельно** сверяется с обоими значениями. Успешные строки CI: `G4_1_CHECKOUT_SHA_VERIFIED=PASS HEAD=<SHA> EXPECTED=<SHA>`, `G4_1_MANIFEST_CHECKOUT_SHA_VERIFIED=PASS SOURCE=<SHA>`.
+
+**Важно:** SHA исторического ZIP из предыдущего workflow до этого исправления не является актуальной контрольной суммой для нового PR HEAD. Новый размер и SHA-256 необходимо получать только из **успешного полного CI на точном новом HEAD**. Одинаковые Git tree у merge-ref и PR HEAD в прежних запусках не доказывают правильность source provenance.
+
 ## CI и критерии готовности
 
 **Стандартные Go тесты** на Ubuntu/Windows: существующие F01–F08, A1/A2/A3, защищённый localhost, история, pin, негативные тесты ZIP и `go vet`.
@@ -75,11 +81,11 @@ Neurometr-Windows-x64/
 
 ## Контрольная точка внутренней сборки G4.1
 
-[GitHub Actions #43243043079](https://github.com/Herurg123/neurometr-agent/actions/runs/43243043079), реализация packaging/smoke на кодовом HEAD `96685fe8eb3cbcc61e5d6708bea4a8cfcbc68d9d`: **3/3 PASS**.
+**Историческая контрольная точка до исправления source provenance:** [GitHub Actions #43243043079](https://github.com/Herurg123/neurometr-agent/actions/runs/43243043079), HEAD `96685fe8eb3cbcc61e5d6708bea4a8cfcbc68d9d`, **3/3 PASS**. Это доказательство функционального smoke, **не** корректного соответствия checkout SHA полю manifest.
 
 - Ubuntu 24.04 и Windows 2025 x64: по **218 PASS, 0 FAIL, 2 ожидаемых SKIP** live-only; `go vet`, F01–F08, проверка canonical 23-файлового pin и bundled-каталога PASS.
 - Официальный llmfit: `6 878 103` байта, SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`, `Authenticode=Valid`, `--version=llmfit 1.1.20`.
-- Дважды собранный внутренний ZIP с **34 инвентаризованными файлами** оказался байтово одинаковым: **12 843 925 байт**, SHA-256 `7071f094f5d321fe3d38b832176b3794f4297a7447b3859a24784a7529676d79` для указанного source HEAD. Истинная длина/хэш ZIP зависит от исходного commit в release-manifest; повторная сборка на другом commit создаст другую контрольную сумму.
+- **Только историческая контрольная сумма, не действующая после provenance fix:** внутренний ZIP с **34 инвентаризованными файлами**, 12 843 925 байт, SHA-256 `7071f094f5d321fe3d38b832176b3794f4297a7447b3859a24784a7529676d79`. В прежнем workflow checkout был временным PR merge commit, поэтому указанный `agent_source_commit` в manifest не был независимым подтверждением фактически собранного исходного commit. Новый SHA ZIP должен фиксироваться отдельно по успешному повторному CI.
 - Распакованный в путь с пробелами ZIP прошёл `contractcheck`, `catalogcheck`, проверку manifest и хешей, самостоятельный Windows localhost без `-root` и SDK в `PATH`; полный Go/Python validator для обычного native JSON, `catalog_ref.origin=bundled`, история после рестарта и ручной экспорт PASS. На runner создан диагностический JSON **2285 байт**, один DXGI-адаптер; это не данные ПК владельца.
 - Шесть **негативных проверок настоящего полного ZIP**: отсутствие файла, подмена содержимого, подмена manifest, `../` traversal, дубликат пути с различием регистра и ZIP symlink — все отвергнуты **до записи на диск**.
 - Быстрый маршрут продолжил работу при отсутствии и при повреждении `bin/llmfit.exe`; вызовы llmfit `system`, `fit`, `recommend` не выполнялись. `G4_1_PRIVATE_ZIP_CLEANUP=PASS NO_ARTIFACT_UPLOAD`: ни архив, ни приватный диагностический JSON не публиковались.
