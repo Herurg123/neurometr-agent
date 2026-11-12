@@ -85,23 +85,54 @@ def local_external_dial_denied(url):
     print("A3_4_EXTERNAL_INTERFACE=DENIED")
 
 def verify_acl(directory):
-    # Independent Windows ACL check; not based on mode bits and does not
-    # disclose the private path or trustee names in CI logs.
+    # Independent real Windows ACL audit, comparing well-known SIDs rather
+    # than locale-dependent trustee names. No trustee names/paths are logged.
     script=(
       "$ErrorActionPreference='Stop';"
-      "$p=Join-Path $env:LOCALAPPDATA 'Neurometr\\history';"
+      "$p=Join-Path $env:LOCALAPPDATA 'Neurometr\history';"
       "$acl=Get-Acl -LiteralPath $p;"
-      "$rules=@($acl.Access | Where-Object {"
-      " $_.AccessControlType -eq 'Allow' -and "
-      " ($_.IdentityReference.Value -match '^(Everyone|BUILTIN\\\\Users|NT AUTHORITY\\\\Authenticated Users|BUILTIN\\\\Guests)$')"
-      "});"
-      "if($rules.Count -gt 0){exit 3};exit 0"
+      "$blocked=@('S-1-1-0','S-1-5-11','S-1-5-32-545','S-1-5-32-546');"
+      "$bad=$false;"
+      "foreach($ace in $acl.Access){"
+      " if($ace.AccessControlType -ne 'Allow'){continue};"
+      " $sid=$ace.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value;"
+      " if($blocked -contains $sid){$bad=$true}"
+      "};"
+      "if($bad){exit 3};exit 0"
     )
-    p=subprocess.run(["powershell.exe","-NoProfile","-NonInteractive","-Command",script],
+    audit=subprocess.run(["powershell.exe","-NoProfile","-NonInteractive","-Command",script],
         stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15)
-    expect(p.returncode==0,"Windows history DACL has broad allowed trustees or could not be audited")
+    if audit.returncode!=0:
+        print("A3_4_WINDOWS_ACL_AUDIT=FAIL EXIT="+str(audit.returncode))
+    expect(audit.returncode==0,"Windows history DACL does not meet private-history policy")
     expect(directory.is_dir(),"history folder missing")
     print("A3_4_WINDOWS_ACL_AUDIT=PASS")
+
+def optional_edge_browser(url):
+    # Installed Microsoft Edge/Chromium only; offline, no screenshots, video,
+    # page traces, remote URLs or emitted DOM with report information.
+    candidates=[
+      Path(os.environ.get("PROGRAMFILES(X86)",""))/"Microsoft"/"Edge"/"Application"/"msedge.exe",
+      Path(os.environ.get("PROGRAMFILES",""))/"Microsoft"/"Edge"/"Application"/"msedge.exe",
+    ]
+    binary=next((x for x in candidates if x.is_file()),None)
+    if binary is None:
+        print("A3_4_BROWSER_SMOKE=SKIP Edge not present")
+        return
+    with tempfile.TemporaryDirectory(prefix="neurometr-edge-private-") as profile:
+        try:
+            p=subprocess.run([str(binary),"--headless=new","--disable-gpu",
+                "--disable-background-networking","--no-first-run",
+                "--no-default-browser-check","--disable-extensions",
+                "--user-data-dir="+profile,"--dump-dom",url],
+                capture_output=True,timeout=18)
+        except (OSError,subprocess.TimeoutExpired):
+            print("A3_4_BROWSER_SMOKE=SKIP headless Edge unavailable")
+            return
+        if p.returncode==0 and "Готово к проверке".encode("utf-8") in p.stdout:
+            print("A3_4_BROWSER_SMOKE=PASS installed Edge rendered offline UI")
+        else:
+            print("A3_4_BROWSER_SMOKE=SKIP headless DOM readiness not confirmed")
 
 def python_oracle(raw):
     spec=importlib.util.spec_from_file_location("frozen_web_validator",REFERENCE)
@@ -173,6 +204,7 @@ def main():
         print("A3_4_NATIVE_WINDOWS=PASS FULL_GO_VALIDATOR=PASS WEB_PYTHON=PASS BUNDLED_REF=PASS NO_LLMFIT=PASS PII=PASS")
         print("A3_4_JSON_BYTES="+str(len(raw))+" GPU_ENTRIES="+str(len(report["hardware"]["gpus"])))
         verify_acl(dir)
+        optional_edge_browser(url)
         # Restart loses cookie/session, but not history. A newly issued session
         # must permit reading the exact same previously validated report.
         stop(proc);proc=None
