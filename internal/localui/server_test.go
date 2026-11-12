@@ -3,6 +3,7 @@ package localui
 import (
  "bytes"
  "context"
+ "errors"
  "encoding/json"
  "io"
  "net"
@@ -140,6 +141,58 @@ func TestSingleConcurrentDiagnostic(t *testing.T){
  select{case code:=<-finished:if code!=201{t.Fatalf("first run failed: %d",code)};case <-time.After(3*time.Second):t.Fatal("first run blocked")}
  if hits.Load()!=1{t.Fatal("multiple diagnostic processes started simultaneously")}
 }
+
+func TestPartialHardwareReportRemainsValidAfterUIHistory(t *testing.T){
+ root,err:=filepath.Abs(filepath.Join("..",".."));if err!=nil{t.Fatal(err)}
+ probeEvidence:=func(kind,source string)map[string]any{
+  return map[string]any{"kind":kind,"source":source}
+ }
+ probes:=diagnostic.Probes{
+  OS:func(context.Context)(map[string]any,error){
+   return map[string]any{"family":"windows","version":"10.0.22631","arch":"x64",
+    "evidence":probeEvidence("detected","test:os")},nil
+  },
+  CPU:func(context.Context)(map[string]any,error){
+   return map[string]any{"model":"Synthetic CPU","physical_cores":4,"logical_processors":8,
+    "evidence":probeEvidence("detected","test:cpu")},nil
+  },
+  RAM:func(context.Context)(map[string]any,error){
+   return map[string]any{"physical_total_bytes":int64(16*1024*1024*1024),
+    "available_bytes":int64(7*1024*1024*1024),
+    "available_observed_at":time.Now().UTC().Format(time.RFC3339),
+    "evidence":probeEvidence("measured","test:ram")},nil
+  },
+  GPU:func(context.Context)(map[string]any,error){return nil,errors.New("synthetic bounded GPU probe failure")},
+ }
+ _,url,_:=testServer(t,func(ctx context.Context)(diagnostic.Result,error){
+  return diagnostic.Generate(ctx,diagnostic.Options{ContractRoot:root},probes)
+ })
+ client:=&http.Client{Timeout:5*time.Second}
+ cookie,csrf:=tokens(t,client,url)
+ posted:=req(t,client,"POST",url+"api/run",cookie,url[:len(url)-1],csrf,[]byte("{}"))
+ if posted.StatusCode!=201{t.Fatalf("partial diagnostics rejected: %d",posted.StatusCode)}
+ var entry struct{ID string `json:"id"`}
+ if err:=json.Unmarshal(closed(posted),&entry);err!=nil{t.Fatal(err)}
+ response:=req(t,client,"GET",url+"api/report/"+entry.ID,cookie,"","",nil)
+ if response.StatusCode!=200{t.Fatal("partial report not persisted")}
+ var doc map[string]any
+ if err:=json.Unmarshal(closed(response),&doc);err!=nil{t.Fatal(err)}
+ if doc["overall_status"]!="partial"{t.Fatal("partial hardware status lost")}
+ hardware:=doc["hardware"].(map[string]any)
+ if hardware["ram"].(map[string]any)["physical_total_bytes"]==nil ||
+    hardware["cpu"].(map[string]any)["physical_cores"]==nil {
+   t.Fatal("useful CPU/RAM lost on GPU failure")
+ }
+ problems:=doc["errors"].([]any)
+ if len(problems)!=1||problems[0].(map[string]any)["component"]!="hardware"{
+  t.Fatalf("structured hardware failure missing: %v",len(problems))
+ }
+ components:=doc["components"].([]any)
+ if components[0].(map[string]any)["status"]!="partial"{t.Fatal("hardware component status lost")}
+ if doc["catalog_ref"].(map[string]any)["origin"]!="bundled"{t.Fatal("trusted catalog ref lost")}
+ t.Log("A3_4_UI_PARTIAL=PASS CPU_RAM_PRESERVED=PASS STRUCTURED_ERROR=PASS HISTORY_FULL_VALIDATOR=PASS")
+}
+
 func TestNoSessionOnRawReports(t *testing.T){
  _,url,_:=testServer(t,nil)
  client:=&http.Client{Timeout:5*time.Second}
