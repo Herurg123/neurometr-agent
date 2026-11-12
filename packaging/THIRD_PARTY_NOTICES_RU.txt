@@ -1,0 +1,37 @@
+НЕЙРОМЕТР — сведения о компонентах внутреннего комплекта G4.1
+
+Это внутренний CI-комплект для технической проверки. Он не является публичным
+релизом и не разрешён к распространению.
+
+1. llmfit CLI v1.1.20
+   Источник: https://github.com/AlexsJones/llmfit/tree/v1.1.20
+   Лицензия основного проекта: MIT
+   Полный текст: LICENSES/llmfit-MIT.txt
+   Официальный Windows x64 ZIP: SHA-256
+   1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489
+   Наличие исполняемого файла не означает проверки CPU/GPU модели, backend или TPS.
+
+2. github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
+   Источник: https://github.com/santhosh-tekuri/jsonschema/tree/v6.0.3
+   Лицензия: Apache License 2.0
+   Полный текст: LICENSES/jsonschema-Apache-2.0.txt
+
+3. golang.org/x/text v0.14.0
+   Источник: https://github.com/golang/text/tree/v0.14.0
+   Лицензия: BSD-3-Clause
+   Полный текст: LICENSES/golang-x-text-BSD-3-Clause.txt
+
+4. Go standard library/runtime (сборка версии Go 1.23.12)
+   Источник: https://github.com/golang/go/tree/go1.23.12
+   Лицензия: BSD-3-Clause
+   Полный текст: LICENSES/go-toolchain-BSD-3-Clause.txt
+
+НЕЗАКРЫТЫЕ ВОПРОСЫ ПЕРЕД ВЫПУСКОМ:
+- Лицензия собственного кода neurometr-agent не утверждена владельцем;
+  назначать её в G4.1 запрещено. Это блокер публичной поставки.
+- Не проведён полный независимый аудит транзитивных Rust-зависимостей,
+  входящих в официальный собранный llmfit.exe, и связанных notices.
+- Правовой статус перераспространения контрактов, каталога и всех сторонних
+  материалов должен быть проверен перед публичным выпуском.
+- Release manifest фиксирует инвентаризацию, но не является подписью
+  издателя или заменой доверенной подписи remote catalog.
