@@ -1,0 +1,28 @@
+НЕЙРОМЕТР — ИСТОЧНИКИ ДАННЫХ BUNDLED-КАТАЛОГА
+Каталог: bundled/catalog.json, версия 2026.11.11.2.
+Точная контрольная сумма (SHA-256):
+1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2
+Происхождение зафиксировано в bundled/catalog.lock.json:
+Herurg123/neurometr-web, commit bb828bb09372e16cf63d04371d5f9367eee2526e.
+
+В каталоге содержатся только фактические метаданные и URL, без model weights,
+текстов model cards или исходного кода Qwen. Зафиксированы два snapshot:
+- Qwen/Qwen2.5-0.5B-Instruct-GGUF, revision
+  9217f5db79a29953eb74d5343926648285ec7e67.
+  https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF
+- Qwen/Qwen2.5-1.5B-Instruct-GGUF, revision
+  91cad51170dc346986eccefdc2dd33a9da36ead9.
+  https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
+
+Соответствующие upstream репозитории моделей указывают Apache License 2.0.
+Полный текст Apache-2.0 (уже входящий в комплект):
+LICENSES/jsonschema-Apache-2.0.txt.
+Приведённая ссылка на лицензию не означает, что веса входят в ZIP или что
+наши оценочные значения одобрены правообладателем Qwen.
+
+Канонические схемы и фикстуры принадлежат проекту Нейрометр; их точное
+происхождение закреплено в contracts/contract.lock.json, source:
+Herurg123/neurometr-web, commit 97aa0f4c1ceaef36608288e589b8abe935c5189e.
+Копия контрактов в Agent распространяется в составе тестового бинарного
+комплекта по разрешению владельца; отдельная OSS-лицензия на исходники не
+назначена. Ранее опубликованная в GitHub доступность не означает OSS.

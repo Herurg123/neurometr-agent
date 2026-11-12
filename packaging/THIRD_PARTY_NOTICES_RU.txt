@@ -1,37 +1,41 @@
-НЕЙРОМЕТР — сведения о компонентах внутреннего комплекта G4.1
+НЕЙРОМЕТР — СТОРОННИЕ ЛИЦЕНЗИИ И АТРИБУЦИИ
+Тестовый Windows x64 комплект G4.2; не является GitHub Release.
 
-Это внутренний CI-комплект для технической проверки. Он не является публичным
-релизом и не разрешён к распространению.
-
-1. llmfit CLI v1.1.20
-   Источник: https://github.com/AlexsJones/llmfit/tree/v1.1.20
-   Лицензия основного проекта: MIT
-   Полный текст: LICENSES/llmfit-MIT.txt
-   Официальный Windows x64 ZIP: SHA-256
+1. llmfit CLI v1.1.20: MIT; Copyright (c) 2026 Alex Jones.
+   Источник https://github.com/AlexsJones/llmfit/tree/v1.1.20
+   Полный текст LICENSES/llmfit-MIT.txt.
+   Пин официального Windows ZIP:
    1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489
-   Наличие исполняемого файла не означает проверки CPU/GPU модели, backend или TPS.
+   Транзитивные Rust-зависимости ещё НЕ прошли законченный audit:
+   см. LLMFIT_WINDOWS_CLI_AUDIT_RU.txt. Публичная выдача блокируется gate.
 
-2. github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
-   Источник: https://github.com/santhosh-tekuri/jsonschema/tree/v6.0.3
-   Лицензия: Apache License 2.0
-   Полный текст: LICENSES/jsonschema-Apache-2.0.txt
+2. Потенциально встроенные через llmfit-web/dist ресурсы:
+   react 18.3.1, react-dom 18.3.1, scheduler 0.23.2;
+   MIT, Copyright (c) Facebook, Inc. and its affiliates.
+   Полный текст LICENSES/react-family-MIT.txt.
+   js-tokens 4.0.0; MIT, Copyright (c) 2014–2018 Simon Lydell;
+   полный текст LICENSES/js-tokens-MIT.txt.
+   loose-envify 1.4.0; MIT, Copyright (c) 2015 Andres Suarez;
+   полный текст LICENSES/loose-envify-MIT.txt.
+   Доказательство точного состава встроенного JS подписанного EXE отсутствует.
 
-3. golang.org/x/text v0.14.0
-   Источник: https://github.com/golang/text/tree/v0.14.0
-   Лицензия: BSD-3-Clause
-   Полный текст: LICENSES/golang-x-text-BSD-3-Clause.txt
+3. github.com/santhosh-tekuri/jsonschema/v6 v6.0.3:
+   Apache License 2.0; полная лицензия LICENSES/jsonschema-Apache-2.0.txt.
+   Источник https://github.com/santhosh-tekuri/jsonschema/tree/v6.0.3
 
-4. Go standard library/runtime (сборка версии Go 1.23.12)
-   Источник: https://github.com/golang/go/tree/go1.23.12
-   Лицензия: BSD-3-Clause
-   Полный текст: LICENSES/go-toolchain-BSD-3-Clause.txt
+4. golang.org/x/text v0.14.0:
+   BSD-3-Clause; полный текст LICENSES/golang-x-text-BSD-3-Clause.txt.
+   Источник https://github.com/golang/text/tree/v0.14.0
 
-НЕЗАКРЫТЫЕ ВОПРОСЫ ПЕРЕД ВЫПУСКОМ:
-- Лицензия собственного кода neurometr-agent не утверждена владельцем;
-  назначать её в G4.1 запрещено. Это блокер публичной поставки.
-- Не проведён полный независимый аудит транзитивных Rust-зависимостей,
-  входящих в официальный собранный llmfit.exe, и связанных notices.
-- Правовой статус перераспространения контрактов, каталога и всех сторонних
-  материалов должен быть проверен перед публичным выпуском.
-- Release manifest фиксирует инвентаризацию, но не является подписью
-  издателя или заменой доверенной подписи remote catalog.
+5. Go standard library/runtime в сборке Go 1.23.12:
+   BSD-3-Clause; полный текст LICENSES/go-toolchain-BSD-3-Clause.txt.
+   Источник https://github.com/golang/go/tree/go1.23.12
+
+6. Bundled catalog и проектные контракты:
+   источник, revision, upstream Apache-2.0 Qwen и отсутствие весов:
+   DATA_SOURCE_ATTRIBUTION_RU.txt.
+
+Собственному исходному коду Agent open-source лицензия НЕ назначена.
+Тестовое бинарное распространение через GitHub Actions разрешено владельцем
+в пределах DISTRIBUTION_TERMS_RU.txt; это не коммерческая поставка.
+release-manifest.json — инвентаризация SHA-256, не подпись.

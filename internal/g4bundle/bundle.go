@@ -1,4 +1,4 @@
-// Package g4bundle builds and validates an INTERNAL, deterministic, offline
+// Package g4bundle builds and validates a TEST-DISTRIBUTION, deterministic, offline
 // Windows x64 ZIP. It does not publish, execute, download, or sign anything.
 // Its manifest is an inventory, not a publisher authentication primitive.
 package g4bundle
@@ -27,7 +27,7 @@ import (
 const (
  PackageRoot = "Neurometr-Windows-x64"
  ManifestPath = "release-manifest.json"
- ManifestFormat = "neurometr.g4.1.internal-inventory"
+ ManifestFormat = "neurometr.g4.2.test-inventory"
  LLMBinaryVersion = "1.1.20"
  OfficialArchiveName = "llmfit-v1.1.20-x86_64-pc-windows-msvc.zip"
  OfficialArchiveBytes = 6878103
@@ -170,6 +170,12 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
   "bundled/catalog.json":"bundled/catalog.json",
   "bundled/catalog.lock.json":"bundled/catalog.lock.json",
   "LICENSES/llmfit-MIT.txt":"packaging/licenses/llmfit-MIT.txt",
+  "LICENSES/react-family-MIT.txt":"packaging/licenses/react-family-MIT.txt",
+  "LICENSES/js-tokens-MIT.txt":"packaging/licenses/js-tokens-MIT.txt",
+  "LICENSES/loose-envify-MIT.txt":"packaging/licenses/loose-envify-MIT.txt",
+  "DISTRIBUTION_TERMS_RU.txt":"packaging/DISTRIBUTION_TERMS_RU.txt",
+  "DATA_SOURCE_ATTRIBUTION_RU.txt":"packaging/DATA_SOURCE_ATTRIBUTION_RU.txt",
+  "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt":"packaging/LLMFIT_WINDOWS_CLI_AUDIT_RU.txt",
   "LICENSES/jsonschema-Apache-2.0.txt":"packaging/licenses/jsonschema-Apache-2.0.txt",
   "LICENSES/golang-x-text-BSD-3-Clause.txt":"packaging/licenses/golang-x-text-BSD-3-Clause.txt",
   "LICENSES/go-toolchain-BSD-3-Clause.txt":"packaging/licenses/go-toolchain-BSD-3-Clause.txt",
@@ -184,7 +190,7 @@ func packageInputs(c Config)(map[string][]byte,Manifest,error){
  if len(files)>maxPackageFiles{return nil,zero,ErrInvalidBundle}
  manifest:=Manifest{
   Format:ManifestFormat,
-  Distribution:"internal-ci-only-not-for-publication",
+  Distribution:"user-qa-distribution",
   SourceCommit:c.SourceCommit,
   ContractVersion:"0.1.0",
   CatalogVersion:catalogpin.CatalogVersion,
@@ -220,7 +226,7 @@ func Pack(c Config)(Manifest,error){
  if _,statErr:=os.Lstat(output);statErr==nil{return Manifest{},ErrInvalidBundle}else if !errors.Is(statErr,os.ErrNotExist){return Manifest{},ErrInvalidBundle}
  dir:=filepath.Dir(output)
  info,e:=os.Lstat(dir);if e!=nil||!info.IsDir()||info.Mode()&os.ModeSymlink!=0{return Manifest{},ErrInvalidBundle}
- tmp,e:=os.CreateTemp(dir,".g4-internal-*.zip.tmp");if e!=nil{return Manifest{},e}
+ tmp,e:=os.CreateTemp(dir,".g4-test-*.zip.tmp");if e!=nil{return Manifest{},e}
  tmpPath:=tmp.Name();defer os.Remove(tmpPath)
  z:=zip.NewWriter(tmp)
  for _,f:=range m.Files{
@@ -269,7 +275,7 @@ func Verify(zipPath,dest string)(Manifest,error){
  if e=dec.Decode(&m);e!=nil{return zero,ErrInvalidBundle}
  var tail any
  if dec.Decode(&tail)!=io.EOF{return zero,ErrInvalidBundle}
- if m.Format!=ManifestFormat||m.Distribution!="internal-ci-only-not-for-publication"||!gitCommit.MatchString(m.SourceCommit)||
+ if m.Format!=ManifestFormat||m.Distribution!="user-qa-distribution"||!gitCommit.MatchString(m.SourceCommit)||
   m.ContractVersion!="0.1.0"||m.CatalogVersion!=catalogpin.CatalogVersion||
   m.CatalogSHA256!=catalogpin.CatalogSHA256||m.LLMFitVersion!=LLMBinaryVersion||
   m.LLMFitArchiveSHA256!=OfficialArchiveSHA256||len(m.Files)!=len(files)-1{
@@ -278,7 +284,10 @@ func Verify(zipPath,dest string)(Manifest,error){
  required:=[]string{"Neurometr.exe","bin/llmfit.exe","bundled/catalog.json","bundled/catalog.lock.json",
   "contracts/contract.lock.json","contracts/diagnostic.schema.json","LICENSES/llmfit-MIT.txt",
   "LICENSES/jsonschema-Apache-2.0.txt","LICENSES/golang-x-text-BSD-3-Clause.txt",
-  "LICENSES/go-toolchain-BSD-3-Clause.txt","THIRD_PARTY_NOTICES_RU.txt","README_RU.txt"}
+  "LICENSES/go-toolchain-BSD-3-Clause.txt","LICENSES/react-family-MIT.txt",
+  "LICENSES/js-tokens-MIT.txt","LICENSES/loose-envify-MIT.txt",
+  "DISTRIBUTION_TERMS_RU.txt","DATA_SOURCE_ATTRIBUTION_RU.txt",
+  "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt","THIRD_PARTY_NOTICES_RU.txt","README_RU.txt"}
  for _,p:=range required{if len(files[p])==0{return zero,ErrInvalidBundle}}
  if len(files["bundled/catalog.json"])!=catalogpin.CatalogSize||hexSHA(files["bundled/catalog.json"])!=catalogpin.CatalogSHA256{
   return zero,ErrInvalidBundle

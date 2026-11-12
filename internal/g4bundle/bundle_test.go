@@ -42,6 +42,12 @@ func makeSyntheticPackage(t *testing.T)testBundle{
   "bundled/catalog.json":bytes.Repeat([]byte("a"),catalogSizeForTest()),
   "bundled/catalog.lock.json":[]byte("{}"),
   "LICENSES/llmfit-MIT.txt":[]byte("MIT full source copy test"),
+  "LICENSES/react-family-MIT.txt":[]byte("React MIT notice test"),
+  "LICENSES/js-tokens-MIT.txt":[]byte("js-tokens MIT notice test"),
+  "LICENSES/loose-envify-MIT.txt":[]byte("loose-envify MIT notice test"),
+  "DISTRIBUTION_TERMS_RU.txt":[]byte("Test distribution terms"),
+  "DATA_SOURCE_ATTRIBUTION_RU.txt":[]byte("Catalog data attribution"),
+  "LLMFIT_WINDOWS_CLI_AUDIT_RU.txt":[]byte("Windows CLI audit limitations"),
   "LICENSES/jsonschema-Apache-2.0.txt":[]byte("Apache full source copy test"),
   "LICENSES/golang-x-text-BSD-3-Clause.txt":[]byte("Go x/text license test"),
   "LICENSES/go-toolchain-BSD-3-Clause.txt":[]byte("Go toolchain license test"),
@@ -49,7 +55,7 @@ func makeSyntheticPackage(t *testing.T)testBundle{
   "README_RU.txt":[]byte("Readme test"),
  }
  manifest:=Manifest{
-  Format:ManifestFormat,Distribution:"internal-ci-only-not-for-publication",
+  Format:ManifestFormat,Distribution:"user-qa-distribution",
   SourceCommit:strings.Repeat("a",40),ContractVersion:"0.1.0",
   CatalogVersion:"2026.11.11.2",CatalogSHA256:"1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2",
   LLMFitVersion:LLMBinaryVersion,LLMFitArchiveSHA256:OfficialArchiveSHA256,

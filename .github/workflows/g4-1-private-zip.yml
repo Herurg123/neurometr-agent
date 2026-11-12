@@ -204,7 +204,7 @@ jobs:
           $length = (Get-Item -LiteralPath $copy).Length
           $line = $digest + ' *' + $filename + "`n"
           [System.IO.File]::WriteAllText((Join-Path $dir 'SHA256SUMS.txt'),$line,[System.Text.UTF8Encoding]::new($false))
-          python tests/g4/check_download_payload.py --dir $dir --commit $sha
+          python tests/g4/check_download_payload.py --dir $dir --commit $sha --public
           if ($LASTEXITCODE -ne 0) { throw 'G4_2_DOWNLOAD_PAYLOAD_INTEGRITY_FAILED' }
           ('folder=' + $dir) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           ('commit=' + $sha) | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append

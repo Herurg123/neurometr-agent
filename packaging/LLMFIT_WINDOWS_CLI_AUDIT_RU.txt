@@ -1,0 +1,57 @@
+НЕЙРОМЕТР — ЦЕЛЕВОЙ АУДИТ llmfit v1.1.20, WINDOWS x64 CLI
+Область: https://github.com/AlexsJones/llmfit/tree/v1.1.20
+Upstream commit: bb5771394e88e352c266f4bf8bdb7a5295a998a8
+Target: x86_64-pc-windows-msvc. Package: llmfit (llmfit-tui/Cargo.toml).
+Распределяемый файл: подписанный upstream llmfit.exe из официального ZIP,
+SHA-256 ZIP: 1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489.
+
+ПОДТВЕРЖДЕНО ПО ИСХОДНЫМ МАНИФЕСТАМ v1.1.20:
+- Cargo workspace MIT; llmfit-tui (имя Cargo-пакета llmfit) MIT;
+  llmfit-core MIT. Полный исходный текст MIT: LICENSES/llmfit-MIT.txt.
+- Необходимая Rust-область для типовой CLI-сборки: llmfit-tui и
+  llmfit-core, обычные dependencies и build-dependencies, target Windows MSVC,
+  default features, без optional 'nats', без dev-dependencies.
+- llmfit-tui/build.rs: встраивает собранные файлы llmfit-web/dist в бинарник;
+  при отсутствии dist имеет fallback HTML/JS.
+- Официальный upstream release workflow: выполняет npm ci и npm run build
+  в llmfit-web, затем cargo build --release --target ... и Windows signing.
+  Поэтому npm-происхождение web UI надо рассматривать как потенциально
+  ВСТРОЕННОЕ в подписанный EXE, хотя оно не лежит отдельными файлами ZIP.
+- Из npm package-lock.json v1.1.20 пять production packages:
+  react@18.3.1, react-dom@18.3.1, scheduler@0.23.2,
+  js-tokens@4.0.0, loose-envify@1.4.0; metadata licence MIT.
+  Полные MIT copyright-тексты приложены для этих семейств.
+
+ПРЯМЫЕ Rust-зависимости llmfit-tui:
+  llmfit-core, clap, serde, serde_json, schemars, tabled, colored,
+  csv, ratatui, crossterm, unicode-segmentation, unicode-width,
+  arboard, dirs, axum, tokio, rmcp.
+  Опциональная async-nats НЕ включена default features.
+  cfg(unix) libc не относится к target Windows.
+  build.rs самого llmfit-tui использует Rust std.
+
+ПРЯМЫЕ Rust-зависимости llmfit-core:
+  base64, dirs, http, regex, serde, serde_json, yaml_serde,
+  sysinfo, toml, ureq, which. Build-dependency: serde_json.
+  cfg(macos) objc2-metal не относится к Windows target.
+  dev-dependency jsonschema не относится к обычной CLI-сборке.
+
+НЕ УСТАНОВЛЕНО, ПУБЛИКАЦИЯ ОСТАЁТСЯ ЗАБЛОКИРОВАННОЙ:
+- Полный target-filtered Rust dependency graph с версиями/feature closure
+  и SPDX по Rust crates, включая proc-macro/build-time исполнения.
+  659 записей Cargo.lock охватывают весь workspace, не число CLI-компонентов.
+- Полные лицензии, copyright и NOTICE каждого фактически нужного Rust crate
+  ещё не сопоставлены с исходными crate archives и не включены в комплект.
+- Отдельный машинно проверяемый SBOM на основе cargo metadata --locked
+  --filter-platform x86_64-pc-windows-msvc для package llmfit не получен.
+- Официальный Authenticode=Valid подтверждает подпись EXE, но не является
+  аттестацией его точного Cargo graph, фактических features, содержимого
+  встроенного dist или исходного commit. Без upstream build provenance
+  реконструкция неизбежно имеет предел доказательности.
+- npm CI/build-time инструменты не равны runtime bundle: чтобы установить
+  точный состав встроенного JS, нужен отчёт upstream dist и лицензий его
+  фактического bundle. Приведённые пять npm production packages — scope
+  по lockfile, не доказательство точного JS asset content signed EXE.
+
+Не выдавать указанный перечень за исчерпывающий SBOM. Этот файл специально
+отделяет подтверждённые сведения от незакрытых лицензионных требований.
