@@ -1,0 +1,58 @@
+# G4.2 — скачиваемый Windows x64 ZIP из GitHub Actions (лицензионная блокировка)
+
+**Статус:** ограниченный Draft PR в `neurometr-agent`. Изменения не объединены. Владелец разрешил потенциальную публичную доступность **только Actions artifact** (не GitHub Release); дополнительных репозиториев и серверов нет. Однако **автоматическая публикация остаётся заблокированной** до документальной проверки условий распространения.
+
+## Утверждённый baseline и источники
+
+- Agent `main` при начале этапа: `dbdd5984823be88eacc407046af12cd86e8d154f`, объединённый G4.1 PR #8.
+- [G4.1 CI #43260151749](https://github.com/Herurg123/neurometr-agent/actions/runs/43260151749): 3/3 PASS на этом точном merge commit, внутренний ZIP **12 843 925 байт**, SHA-256 `df5b8351be89449d3e554c0cc6120d9ff741fcd4ce834f980c9a7033953527a1`. Контрольная сумма относится **только к указанному commit**, не к будущему ZIP.
+- llmfit v1.1.20: официальный GitHub release `AlexsJones/llmfit`; ZIP Windows x64 ровно **6 878 103 байта**, SHA-256 `1f848ddf2554adb89b3a31a034245826694148249fadace572c4544bb3c9c489`. Текущий CI проверяет Authenticode `Valid` и `llmfit 1.1.20`.
+- Diagnostic v0.1.0, исходные canonical contracts и bundled-каталог `2026.11.11.2` с SHA-256 `1d84ff596c589a4db004f8a3fa17490d5479f57db3d7b0a433a7e448289651d2` **не менялись**.
+
+## Маршрут скачиваемого artifact
+
+Существующий `.github/workflows/g4-1-private-zip.yml` расширяется:
+
+1. `push` только в `main`; `workflow_dispatch` можно вызывать, но публикация разрешена **только** при ref `refs/heads/main`; `pull_request` продолжает выполнять полный тест, **никогда не публикуя** ZIP.
+2. После Go-матрицы Ubuntu/Windows выполняется Windows 2025 job: checkout **точного** исходного commit, pin Web-oracle, проверка официального llmfit (размер/SHA/подпись/версия), автономная Go-сборка, два детерминированных ZIP, `g4pack verify`, безопасная распаковка и полная проверка manifest / canonical pin / bundled-каталога.
+3. Реальный Windows smoke на распакованном комплекте: localhost Host/Origin/CSRF, native CPU/RAM/GPU, Go FullValidator и независимый Python Web, история между запусками, экспорт, 6 негативных ZIP-сценариев, отсутствие llmfit как обязательной зависимости. Отчёты с приватными аппаратными данными не загружаются.
+4. В частном `RUNNER_TEMP` формируется папка **ровно из двух файлов**: `Neurometr-Windows-x64-<sha>.zip` и `SHA256SUMS.txt`, строка `<sha256> *Neurometr-Windows-x64-<sha>.zip`. Отдельный `check_download_payload.py` проверяет имена, SHA, содержимое ZIP/manifest, запрет скрытых/служебных/секретных файлов и отсутствие лишнего материала. `SHA256SUMS.txt` относится к **внутреннему ZIP приложения**, не к внешнему контейнеру GitHub Actions.
+5. `publication_gate.py` проверяет событие, ref, точный checkout и `packaging/public_artifact_gate.json`. Политика **сейчас `blocked`**: отсутствует подтверждённый аудит Rust/notices, решение о собственном бинарнике и права на каталог/контракты. При блокировке CI остаётся зелёным после успешных тестов, но `upload-artifact` не вызывается.
+6. Если **в будущем** все лицензионные требования будут подтверждены через отдельное согласованное изменение policy, дополнительно проверяется пользовательская маркировка ZIP/notice. Нельзя распространять ZIP со старым `internal-ci-only-not-for-publication`. Только после этого разрешён `actions/upload-artifact` на `main`; action закреплён по SHA `ea165f8d65b6e75b540449e92b4886f43607fa02` (v4.6.2), **retention 14 дней**, `include-hidden-files=false`, `if-no-files-found=error`, имя `neurometr-windows-x64-<sha>`. Никакого GitHub Release.
+7. В GitHub Actions Summary выводятся фактические commit SHA, ZIP-имя, **размер**, SHA-256, версия llmfit, статус smoke и либо ссылка на реально выгруженный artifact, либо однозначный статус `BLOCKED`. Папка staging и временные ZIP удаляются с runner.
+
+**Fail-closed гарантии:** PR/feature/не-main dispatch никогда не публикуют архив, даже при гипотетически одобренной лицензии; несовпадение source SHA и manifest блокирует сборку. Любой сбой тестов отключает upload. Текущий `blocked` policy означает ноль опубликованных ZIP в этой ветке.
+
+## Лицензии и незакрытые условия распространения
+
+**Факт:** полные тексты `llmfit-MIT.txt`, `jsonschema-Apache-2.0.txt`, `golang-x-text-BSD-3-Clause.txt`, `go-toolchain-BSD-3-Clause.txt` уже входят в комплект G4.1. GitHub upstream `llmfit@v1.1.20` объявляет MIT для workspace. У upstream отсутствует очевидный комплект с полными транзитивными notices в дереве исходников (видны `LICENSE` и лицензия python-компонента).
+
+**Блокер 1: Rust зависимости.** `Cargo.lock` upstream тега содержит **659 записей** всего workspace, включая `llmfit-tui` и `llmfit-desktop`; это **не** список реально влинкованных библиотек Windows CLI. Нужны независимое разрешённое по целевому `x86_64-pc-windows-msvc` dependency tree (features/target), SPDX-лицензии и полные notice/license texts для реально распространяемых компонентов. Только корневого MIT недостаточно для доказательства всех обязательств.
+
+**Блокер 2: права Agent.** Корневой LICENSE отсутствует. Владелец разрешил публичную доступность CI artifacts, но это **не назначение лицензии собственному исходному коду**. Нужна отдельная письменная фиксация права/режима распространения бинарника; автоматическое присвоение лицензии запрещено.
+
+**Блокер 3: контракт и каталог.** Данные source Web и канонические контракты должны быть проверены на допустимость внешнего распространения, включая сторонние notices и источник моделей. HTTPS/Ed25519 канонического удалённого каталога остаются отдельной задачей, G4.2 их не меняет.
+
+**Блокер 4: маркировка ZIP.** G4.1 manifest и `THIRD_PARTY_NOTICES_RU.txt` явно обозначают внутреннюю сборку; `check_download_payload.py --public` отвергнет такой архив. Требуется отдельная корректная редакция пользовательского manifest/notice после закрытия лицензий. Инвентарный manifest с SHA-256 не является подписью издателя.
+
+Политика в `packaging/public_artifact_gate.json` устанавливает `status=blocked`; новый PR с аудиторскими доказательствами и согласием владельца обязателен до её изменения. **Нельзя делать публикацию вручную в обход этого gate**.
+
+## Как пользователь скачает файл после лицензионного допуска
+
+1. Открыть [Agent → Actions → G4.1/G4.2 Windows ZIP](https://github.com/Herurg123/neurometr-agent/actions/workflows/g4-1-private-zip.yml).
+2. Выбрать успешный запуск на `main`. На странице Summary проверить `Source commit`, `ZIP size`, `SHA-256`, `Windows smoke=PASS`; если указано `BLOCKED`, ZIP скачивать нельзя.
+3. В секции **Artifacts** скачать `neurometr-windows-x64-<commit>`. GitHub отдаёт **внешний ZIP-контейнер артефакта**: сначала распаковать его, затем найти **внутренний ZIP приложения** и `SHA256SUMS.txt`.
+4. Убедиться, что имя внутреннего файла `Neurometr-Windows-x64-<commit>.zip` соответствует Summary. Проверить его SHA-256 стандартным PowerShell без установки SDK:
+   ```powershell
+   Get-FileHash -Algorithm SHA256 -LiteralPath '.\Neurometr-Windows-x64-<commit>.zip'
+   ```
+   Полученные 64 hex-символа (регистр не важен) должны точно совпасть с `SHA256SUMS.txt` и Summary. При расхождении **не запускать**.
+5. Распаковать внутренний ZIP в личную папку с пробелами, запустить `Neurometr.exe` без прав администратора. Для отдельного QA-чата **строго одно действие за раз**; не выключать Defender/SmartScreen, не отправлять сырые диагностические JSON.
+
+## Что не тестировалось
+
+Нет конечной лицензионной приёмки и нет разрешения обходить текущую блокировку; публичного скачиваемого ZIP до выполнения условий не будет. Работа на реальном ПК владельца, SmartScreen/Defender, конкретные GPU/NPU, модели, TPS, cloud checks и права текущего пользователя Windows не подтверждены облачным runner. История локальна и не шифруется.
+
+## Контроль результата PR
+
+После CI указать commit HEAD, ссылки Go+Windows jobs, подтверждённый `NO_ARTIFACT_UPLOAD`, SHA/размер внутреннего ZIP, список diff, `main` и Draft PR. **Merge только по отдельному решению оркестратора.**
