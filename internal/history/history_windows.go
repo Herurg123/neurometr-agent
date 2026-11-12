@@ -4,9 +4,7 @@ package history
 
 import (
  "errors"
- "os"
  "path/filepath"
- "strings"
  "syscall"
  "unsafe"
 )
@@ -55,7 +53,7 @@ func currentSID()(string,error){
  defer syscall.CloseHandle(syscall.Handle(handle))
  var n uint32
  getTokenInfo.Call(handle,tokenUserClass,0,0,uintptr(unsafe.Pointer(&n)))
- if n<unsafe.Sizeof(uintptr(0))||n>4096{return "",ErrUnavailable}
+ if n<uint32(unsafe.Sizeof(uintptr(0)))||n>4096{return "",ErrUnavailable}
  b:=make([]byte,n)
  ok,_,_ = getTokenInfo.Call(handle,tokenUserClass,uintptr(unsafe.Pointer(&b[0])),uintptr(n),uintptr(unsafe.Pointer(&n)))
  if ok==0{return "",ErrUnavailable}
@@ -119,5 +117,3 @@ func moveNoReplace(src,dst string)error{
  }
  return nil
 }
-var _ = os.ErrNotExist
-var _ = strings.TrimSpace
