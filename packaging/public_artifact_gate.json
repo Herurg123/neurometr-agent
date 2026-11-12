@@ -4,7 +4,7 @@
   "owner_authorization_for_public_ci_artifacts": "granted",
   "agent_binary_redistribution_rights": "confirmed",
   "llmfit_v1_1_20_mit_license": "verified",
-  "llmfit_transitive_rust_licenses_and_notices": "not_audited",
+  "llmfit_transitive_rust_licenses_and_notices": "source_files_collected_but_exe_and_copyright_coverage_unverified",
   "canonical_contract_catalog_distribution_rights": "confirmed",
   "package_user_labeling": "user_qa_distribution_ready",
   "release_manifest_is_signature": false,
