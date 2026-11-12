@@ -62,9 +62,9 @@ DOCS = {
     "packaging/licenses/jsonschema-Apache-2.0.txt":
         ("END OF TERMS AND CONDITIONS", "APPENDIX: How to apply"),
     "packaging/licenses/golang-x-text-BSD-3-Clause.txt":
-        ("Redistributions", "Copyright"),
+        ("Redistribution and use", "Copyright"),
     "packaging/licenses/go-toolchain-BSD-3-Clause.txt":
-        ("Redistributions", "Copyright"),
+        ("Redistribution and use", "Copyright"),
 }
 # Git object IDs from the exact licensed upstream source revisions.
 SUPPLEMENT_BLOBS = {
